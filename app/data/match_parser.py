@@ -87,8 +87,8 @@ def _parse_point(point:pl.DataFrame) -> pl.DataFrame:
         rally_number=point["Pt"][0],
         p1_score=point["Pts"][0].split("-")[0],
         p2_score=point["Pts"][0].split("-")[1],
-        p1_games=point["Gm1"][0],
-        p2_games=point["Gm2"][0],
+        p1_games=int(point["Gm1"][0]) if point["Gm1"][0] is not None else 0,
+        p2_games=int(point["Gm2"][0]) if point["Gm2"][0] is not None else 0,
         p1_sets=point["Set1"][0],
         p2_sets=point["Set2"][0],
         serve_player=point["Svr"][0],
@@ -130,8 +130,7 @@ def _parse_point(point:pl.DataFrame) -> pl.DataFrame:
         elif char in winners:
             shot.shot_type = "winner"
             shot.is_winner = True
-            if not shot.last_shot_type == 'serve':
-                shot.shot_player = 3 - shot.shot_player
+            shot.shot_player = 3 - shot.shot_player
 
             shot = append_shot(shots, shot, shot_number)
         elif char in stroke_directions:
@@ -176,7 +175,7 @@ def parse_all_points(df: pl.DataFrame) -> pl.DataFrame:
 if __name__ == "__main__":
     import pathlib
     project_root = pathlib.Path(__file__).parent.parent.parent
-    data_path = project_root / "data" / "raw" / "charting-m-points-2020s.csv"
+    data_path = project_root / "data" / "raw" / "charting-m-points-to-2009.csv"
     target_path = project_root / "data" / "processed" / "parsed_points.csv"
     df = pl.read_csv(data_path)
     
