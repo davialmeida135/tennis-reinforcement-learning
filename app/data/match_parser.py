@@ -1,5 +1,5 @@
 import polars as pl
-from app.models.shot import Shot, Point
+from app.models.shot import Shot
 
 serve_errors = ["n", "w", "d", "x", "g", "e", "V", "!", "c"]
 serve_directions = ["4", "5", "6", "0"]
@@ -175,7 +175,7 @@ def parse_all_points(df: pl.DataFrame) -> pl.DataFrame:
 if __name__ == "__main__":
     import pathlib
     project_root = pathlib.Path(__file__).parent.parent.parent
-    data_path = project_root / "data" / "raw" / "charting-m-points-to-2009.csv"
+    data_path = project_root / "data" / "raw" / "charting-m-points-2020s.csv"
     target_path = project_root / "data" / "processed" / "parsed_points.csv"
     df = pl.read_csv(data_path)
     
