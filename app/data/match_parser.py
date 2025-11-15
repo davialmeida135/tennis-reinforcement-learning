@@ -4,7 +4,7 @@ from app.models.shot import Shot
 serve_errors = ["n", "w", "d", "x", "g", "e", "V", "!", "c"]
 serve_directions = ["4", "5", "6", "0"]
 
-stroke_errors = ["n", "w", "d", "x", "!", "e", "@", "#"]
+stroke_errors = ["@", "#"]
 stroke_directions = ["1", "2", "3", "0"]
 stroke_types = [
     "f",
@@ -29,7 +29,7 @@ stroke_types = [
 
 winners = ["*"]
 
-remover = ["7", "8", "9", "+", "=", "-", ";", "^"]
+remover = ["7", "8", "9", "+", "=", "-", ";", "^", "n", "w", "d", "x", "!", "e", "g","e", "V", "!", "c"]
 
 goal_columns = [
     "match_id",
