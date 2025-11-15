@@ -4,6 +4,7 @@ from pydantic import BaseModel
 class Shot(BaseModel):
     match_id: str
     rally_number: int
+    serve_player: int
     shot_player: int
     shot_number: int
     last_shot_type: str = "#"
