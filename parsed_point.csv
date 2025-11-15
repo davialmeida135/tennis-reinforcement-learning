@@ -1,0 +1,8 @@
+match_id,rally_number,shot_player,shot_number,last_shot_type,last_shot_direction,shot_type,shot_direction,p1_score,p2_score,p1_set,p2_set,is_serve,is_winner,is_error
+20250610-M-ITF_Martos-Q2-Preston_Stearns-Alejandro_Lopez_Escribano,1,1,1,#,unknown,serve,direction_4,0,0,0,0,True,False,False
+20250610-M-ITF_Martos-Q2-Preston_Stearns-Alejandro_Lopez_Escribano,1,1,2,serve,direction_4,b,2,0,0,0,0,False,False,False
+20250610-M-ITF_Martos-Q2-Preston_Stearns-Alejandro_Lopez_Escribano,1,1,3,b,2,f,3,0,0,0,0,False,False,False
+20250610-M-ITF_Martos-Q2-Preston_Stearns-Alejandro_Lopez_Escribano,1,1,4,f,3,f,2,0,0,0,0,False,False,False
+20250610-M-ITF_Martos-Q2-Preston_Stearns-Alejandro_Lopez_Escribano,1,1,5,f,2,f,2,0,0,0,0,False,False,False
+20250610-M-ITF_Martos-Q2-Preston_Stearns-Alejandro_Lopez_Escribano,1,1,6,f,2,error_n,unknown,0,0,0,0,False,False,True
+20250610-M-ITF_Martos-Q2-Preston_Stearns-Alejandro_Lopez_Escribano,1,1,7,error_n,unknown,error_@,unknown,0,0,0,0,False,False,True
