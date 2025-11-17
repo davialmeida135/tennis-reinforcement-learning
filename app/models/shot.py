@@ -28,7 +28,7 @@ class Shot(BaseModel):
     serve_player: int
     shot_player: int
     shot_number: int
-    last_shot_type: str = "#"
+    last_shot_type: str = "error_#"
     last_shot_direction: str = "unknown"
     shot_type: str
     shot_direction: str = "unknown"
