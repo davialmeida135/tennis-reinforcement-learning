@@ -4,9 +4,9 @@ import pathlib
 
 if __name__ == "__main__":
     files = [
-    #    "charting-m-points-to-2009.csv",
-    #    "charting-m-points-2010s.csv",
-        "charting-m-points-2020s.csv"
+        "charting-m-points-to-2009.csv",
+        "charting-m-points-2010s.csv",
+        # "charting-m-points-2020s.csv"
     ]
     for file_name in files:
         project_root = pathlib.Path(__file__).parent.parent
