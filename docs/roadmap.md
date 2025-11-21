@@ -10,4 +10,8 @@
 
 ## Ambiente
 - Integrar Engine de partida de tenis
+1. Ambiente recebe ação
+1. Ambiente gera próximas duas ações
+1. Se a primeira for erro, ponto pro pc -> Verifica placar -> Se for a vez do pc, gera mais ações
+1. Se a segunda for erro, ponto pro jogador -> Verifica placar -> Se for a vez do pc, gera mais 2 ações
 
