@@ -105,7 +105,7 @@ def _parse_point(point:pl.DataFrame) -> pl.DataFrame:
             shot.is_serve = True
             shot.shot_type = "serve"
             shot.shot_direction = (
-                "error_" + char
+                "" + char
                 if char in serve_errors
                 else "direction_" + char if char in serve_directions else "unknown"
             )
@@ -120,7 +120,7 @@ def _parse_point(point:pl.DataFrame) -> pl.DataFrame:
             continue
         elif char in stroke_errors:
 
-            shot.shot_type = f"error_{char}"
+            shot.shot_type = f"{char}"
             shot.is_error = True
 
             if not shot.last_shot_type == 'serve':
