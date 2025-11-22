@@ -29,7 +29,7 @@ class Shot(BaseModel):
     shot_player: int
     shot_number: int
     last_shot_type: str = "#"
-    last_shot_direction: str = "unknown"
+    last_shot_direction: str = "1"
     shot_type: str
     shot_direction: str = "unknown"
     p1_score: str = "0"

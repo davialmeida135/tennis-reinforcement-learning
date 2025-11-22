@@ -48,16 +48,20 @@ class MatchParser:
             "is_serve",
         ]
 
+        self.shot: Shot = Shot(
+            match_id="0000",
+            rally_number=1,
+            serve_player=1,
+            shot_player=1,
+            shot_number=1,
+            shot_type="",
+        )
 
     def filter_special_characters(self, point: str) -> str:
         return point.translate({ord(c): None for c in self.remover})
 
-
     def append_shot(self, shots: list[Shot], shot: Shot, shot_number: int) -> Shot:
         shots.append(shot.model_dump())
-
-        # print(shot)
-
         shot.shot_player = 3 - shot.shot_player  # Alterna entre jogador 1 e 2
         shot.shot_number = shot_number
         shot.last_shot_type = shot.shot_type
@@ -70,7 +74,6 @@ class MatchParser:
 
         return shot
 
-
     def parse_point(self, point: pl.DataFrame) -> pl.DataFrame:
         if not point["2nd"][0]:
             point_text = point["1st"][0]
@@ -81,66 +84,71 @@ class MatchParser:
 
         filtered_point = self.filter_special_characters(point_text)
         shots: list[Shot] = []
-        shot: Shot = Shot(
-            match_id=point["match_id"][0],
-            rally_number=point["Pt"][0],
-            p1_score=point["Pts"][0].split("-")[0],
-            p2_score=point["Pts"][0].split("-")[1],
-            p1_games=int(point["Gm1"][0]) if point["Gm1"][0] is not None else 0,
-            p2_games=int(point["Gm2"][0]) if point["Gm2"][0] is not None else 0,
-            p1_sets=point["Set1"][0],
-            p2_sets=point["Set2"][0],
-            serve_player=point["Svr"][0],
-            shot_player=point["Svr"][0],
-            shot_number=1,
-            shot_type="",
-            second_serve=second_serve,
-            full_text=point_text,
-        )
+
+        # Ao iniciar o ponto, configurar os atributos básicos do golpe
+        # Mantém valores do golpe anterior para last_shot_type e last_shot_direction
+        self.shot.match_id = point["match_id"][0]
+        self.shot.rally_number = point["Pt"][0]
+        self.shot.p1_score = point["Pts"][0].split("-")[0]
+        self.shot.p2_score = point["Pts"][0].split("-")[1]
+        self.shot.p1_games = int(point["Gm1"][0]) if point["Gm1"][0] is not None else 0
+        self.shot.p2_games = int(point["Gm2"][0]) if point["Gm2"][0] is not None else 0
+        self.shot.p1_sets = point["Set1"][0]
+        self.shot.p2_sets = point["Set2"][0]
+        self.shot.serve_player = point["Svr"][0]
+        self.shot.shot_player = point["Svr"][0]
+        self.shot.shot_number = 1
+        self.shot.shot_type = ""
+        self.shot.second_serve = second_serve
+        self.shot.full_text = point_text
+
         shot_number = 1
         for i, char in enumerate(filtered_point):
 
+            # Tratamento especial para o primeiro golpe (saque)
             if shot_number == 1:
-                shot.is_serve = True
-                shot.shot_type = "serve"
-                shot.shot_direction = (
-                    char if char in self.serve_errors else self.serve_directions.get(char, "unknown")
+                self.shot.is_serve = True
+                self.shot.shot_type = "serve"
+                self.shot.shot_direction = (
+                    char
+                    if char in self.serve_errors
+                    else self.serve_directions.get(char, "unknown")
                 )
-                shot = self.append_shot(shots, shot, shot_number)
+                self.shot = self.append_shot(shots, self.shot, shot_number)
                 shot_number += 1
 
                 continue
 
             # Capturar o tipo do golpe, mas não avançar o número do golpe ainda
             if char in self.stroke_types:
-                shot.shot_type = char
+                self.shot.shot_type = char
                 continue
             elif char in self.stroke_errors:
 
-                shot.shot_type = f"{char}"
-                shot.is_error = True
+                self.shot.shot_type = f"{char}"
+                self.shot.is_error = True
 
-                if not shot.last_shot_type == "serve":
-                    shot.shot_player = 3 - shot.shot_player
-                shot.shot_direction = shot.last_shot_direction
+                if not self.shot.last_shot_type == "serve":
+                    self.shot.shot_player = 3 - self.shot.shot_player
+                self.shot.shot_direction = self.shot.last_shot_direction
 
-                shot = self.append_shot(shots, shot, shot_number)
+                self.shot = self.append_shot(shots, self.shot, shot_number)
             elif char in self.winners:
-                shot.shot_type = "winner"
-                shot.shot_direction = shot.last_shot_direction
-                shot.is_winner = True
-                shot.shot_player = 3 - shot.shot_player
+                self.shot.shot_type = "winner"
+                self.shot.shot_direction = self.shot.last_shot_direction
+                self.shot.is_winner = True
+                self.shot.shot_player = 3 - self.shot.shot_player
 
-                shot = self.append_shot(shots, shot, shot_number)
+                self.shot = self.append_shot(shots, self.shot, shot_number)
             elif char in self.stroke_directions:
-                shot.shot_direction = char
+                self.shot.shot_direction = char
 
-                shot = self.append_shot(shots, shot, shot_number)
+                self.shot = self.append_shot(shots, self.shot, shot_number)
             else:
-                shot.shot_type = "unknown"
-                shot.shot_direction = "unknown"
+                self.shot.shot_type = "unknown"
+                self.shot.shot_direction = "unknown"
 
-                shot = self.append_shot(shots, shot, shot_number)
+                self.shot = self.append_shot(shots, self.shot, shot_number)
 
             shot_number += 1
 
