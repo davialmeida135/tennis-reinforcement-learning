@@ -107,7 +107,7 @@ def build_transition_graph():
 
     graph: Dict[str, Dict[str, Dict[tuple, float]]] = {}
     records: list[dict[str, Any]] = []
-    temperature = 1.5
+    temperature = 2
     for src_type in possible_types:
         graph[src_type] = {}
         dest_types = []
@@ -121,13 +121,13 @@ def build_transition_graph():
                     dest_types.append((str(count_tuple[2]), int(count_tuple[3])))
                     counts.append(counts_lookup[count_tuple])
 
-            # gather counts in consistent order
-            # apply softmax (with temperature)
-            if temperature != 1.0:
-                logits = np.array(counts) / float(temperature)
-            else:
-                logits = np.array(counts, dtype=float)
-            probs = softmax(logits) if logits.size > 0 else np.array([])
+            logits = np.array(counts, dtype=float)
+
+            adjusted = logits ** (1 / temperature)  # aplica temperatura
+            
+            probs = adjusted/adjusted.sum()
+
+            return dest_types, counts, probs, probs.sum()
             # Construir o grafo de transição
             graph[src_type][str(src_dir)] = {}
             for i, dest in enumerate(dest_types):
