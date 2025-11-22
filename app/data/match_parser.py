@@ -1,4 +1,3 @@
-import random
 import polars as pl
 from app.models.shot import Shot
 
@@ -76,6 +75,14 @@ class MatchParser:
         return shot
 
     def parse_point(self, point: pl.DataFrame) -> pl.DataFrame:
+        if not point["2nd"][0]:
+            point_text = point["1st"][0]
+            second_serve = False
+        else:
+            point_text = point["2nd"][0]
+            second_serve = True
+
+        filtered_point = self.filter_special_characters(point_text)
         shots: list[Shot] = []
 
         # Ao iniciar o ponto, configurar os atributos básicos do golpe
@@ -92,26 +99,6 @@ class MatchParser:
         self.shot.shot_player = point["Svr"][0]
         self.shot.shot_number = 1
         self.shot.shot_type = ""
-
-        if not point["2nd"][0]:
-            point_text = point["1st"][0]
-            second_serve = False
-        else:
-            point_text = point["2nd"][0]
-            second_serve = True
-
-            self.shot.shot_type = "serve"
-            direction = random.choice(["1", "2", "3"])
-            self.shot.shot_direction = direction
-            self.append_shot(shots, self.shot, 1)
-
-            self.shot.shot_type = "#"
-            self.shot.is_error = True
-            self.shot.shot_direction = direction
-            self.append_shot(shots, self.shot, 1)
-
-        filtered_point = self.filter_special_characters(point_text)
-
         self.shot.second_serve = second_serve
         self.shot.full_text = point_text
 
