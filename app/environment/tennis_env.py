@@ -259,7 +259,7 @@ class TennisEnv:
 
 if __name__ == "__main__":
     # Example usage
-    from app.data.transition_graph_2 import build_transition_graph
+    from app.data.transition_graph import build_transition_graph
     import random
     start = time.time()
     transition_graph = build_transition_graph()

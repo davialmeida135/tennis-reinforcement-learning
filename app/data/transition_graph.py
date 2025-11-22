@@ -1,119 +1,158 @@
-# Import necessary libraries
-import pandas as pd
-from typing import Dict, Tuple, Any, Optional
-from pathlib import Path
+import random
 import numpy as np
-
-# Import softmax function
 from scipy.special import softmax
-
-possible_types = ['serve', 'b', '@', 'f', 'unknown', 'r', '#', 'i', 'm', 'o',
-       'winner', 's', 'v', 'z', 'u', 'h', 'l', 'j', 'y', 't', 'k', 'p',
-       'q']
-
-possible_directions = ['direction_4', '1', '3', 'unknown', 'direction_5', '2',
-       'direction_6', 'direction_0']
+import pandas as pd
+from typing import Dict, Any
 
 
-def remove_illegal_transitions(
-    counts_lookup: Dict[tuple, int]
-) -> Dict[tuple, int]:
-    """
-    Remove illegal transitions from the transition graph by setting their probabilities to zero.
+def build_transition_graph():
+    df = pd.read_csv(
+        "data/processed/shot_transitions_parsed_charting-m-points-2010s.csv"
+    )
 
-    """
-    error_and_winner_types = {"@", "#", "winner"}
-    normalized_counts: dict[tuple, int] = {}
-    for (lt, ld, t, d), c in counts_lookup.items():
-        if t in error_and_winner_types and d != "unknown":
-            # aggregate into (t, 'unknown') bucket
-            nk = (lt, ld, t, "unknown")
-            normalized_counts[nk] = normalized_counts.get(nk, 0) + c
-        else:
-            nk = (lt, ld, t, d)
-            normalized_counts[nk] = normalized_counts.get(nk, 0) + c
-    return normalized_counts
+    # Regras para remover transições ilegais
+    # 1. Um "serve" não pode ser seguido de outro serve
+    # 2. Um "forehand" ou "backhand" não pode ser seguido de um "serve"
+    # 3. As direções devem estar entre 1 e 3
+    # 4. Erros não podem ser seguidos por erros
+    # 5. Um "winner" não pode ser seguido por outro "winner"
+    # 6. Erros e winners não tem direção definida (usar 'unknown')
 
-def build_transition_graph_from_counts(
-    counts_df: Optional[pd.DataFrame] = None,
-    counts_csv: Optional[str] = None,
-    temperature: float = 1.0
-) -> Tuple[Dict[str, Dict[str, Dict[str, Dict[str, float]]]], pd.DataFrame]:
-    """
-    Build transition probability graph from a counts DataFrame or CSV.
+    possible_strokes = [
+        "b",
+        "f",
+        "r",
+        "i",
+        "m",
+        "o",
+        "s",
+        "v",
+        "z",
+        "u",
+        "h",
+        "l",
+        "j",
+        "y",
+        "t",
+        "k",
+        "p",
+    ]
 
-    - counts_df: DataFrame with columns
-        ['last_shot_type','last_shot_direction','shot_type','shot_direction','count']
-    - counts_csv: path to CSV in [data/processed](data/processed) (used if counts_df is None).
-    - temperature: softmax temperature (higher -> more uniform).
+    possible_types = [
+        "serve",
+        "@",
+        "#",
+        "winner",
+        "b",
+        "f",
+        "r",
+        "i",
+        "m",
+        "o",
+        "s",
+        "v",
+        "z",
+        "u",
+        "h",
+        "l",
+        "j",
+        "y",
+        "t",
+        "k",
+        "p",
+    ]
 
-    Returns:
-      - nested dict: graph[last_type][last_dir][shot_type][shot_dir] = probability
-      - flat DataFrame with columns:
-        ['last_shot_type','last_shot_direction','shot_type','shot_direction','count','probability']
-    """
-    if counts_df is None:
-        if counts_csv is None:
-            project_root = Path(__file__).parent.parent.parent
-            counts_csv = project_root / "data" / "processed" / "shot_transitions.csv"
-        counts_df = pd.read_csv(counts_csv)
+    errors_and_winner = ["#", "@", "winner"]
 
-    # ensure expected columns
-    expected = {"last_shot_type","last_shot_direction","shot_type","shot_direction","count"}
-    if not expected.issubset(set(counts_df.columns)):
-        raise ValueError(f"counts_df must contain columns: {expected}")
+    possible_directions = [1, 2, 3]
+
+    from scipy.special import softmax
+
+    counts_lookup = {}
+
+    # Para cada tipo/direção possível, garantir que exista uma entrada no dicionário
+    for s_type in possible_types:
+        for s_dir in possible_directions:
+            # Garantir que todas as combinações de last_s_type e last_s_dir existam
+            for last_s_type in possible_types:
+                for last_s_dir in possible_directions:
+                    if last_s_type == "serve" and s_type == "serve":
+                        continue  # Regra 1
+
+                    # Transições entre erros e winners não são consideradas
+                    if (s_type in errors_and_winner and
+                        last_s_type in errors_and_winner):
+                        continue
+
+                    # Antes de um saque só pode vir erro ou winner
+                    if (last_s_type not in errors_and_winner and
+                        s_type == "serve"):
+                        continue
+
+                    # Depois de um erro ou winner só pode vir saque
+                    if (last_s_type in errors_and_winner and
+                        s_type != "serve"):
+                        continue
+
+                    key = (last_s_type, last_s_dir, s_type, s_dir)
+                    if key not in counts_lookup:
+                        counts_lookup[key] = 0
 
     # Build quick lookup of counts: map (last_type,last_dir,shot_type,shot_dir) -> count
-    counts_lookup = {}
-    for _, r in counts_df.iterrows():
-        key = (r["last_shot_type"], r["last_shot_direction"], r["shot_type"], r["shot_direction"])
-        counts_lookup[key] = int(r["count"])
+    for _, row in df.iterrows():
+        key = (row["last_shot_type"], row["last_shot_direction"], row["shot_type"], row["shot_direction"])
+        counts_lookup[key] = int(row["count"])
 
-    counts_lookup = remove_illegal_transitions(counts_lookup)
+    print(counts_lookup[("serve",1,"@",1)])
 
-    graph: Dict[str, Dict[str, Dict[str, Dict[str, float]]]] = {}
+    graph: Dict[str, Dict[str, Dict[tuple, float]]] = {}
     records: list[dict[str, Any]] = []
-
-    # For each possible source (last_type, last_dir) create action vector across all targets
-    target_pairs = [(t, d) for t in possible_types for d in possible_directions]
+    temperature = 1.5
     for src_type in possible_types:
         graph[src_type] = {}
+        dest_types = []
+        counts = []
         for src_dir in possible_directions:
-            # gather counts in consistent order
-            counts = [counts_lookup.get((src_type, src_dir, t, d), 0) for (t, d) in target_pairs]
+            print("Looking at source:", src_type, src_dir)
+            # Pegar todos os valores de contagem para transições válidas a partir de (src_type, src_dir) em counts_lookup
+            for count_tuple in counts_lookup.keys():
+                if str(count_tuple[0]) == str(src_type) and int(count_tuple[1]) == int(src_dir):
+                    #print("  Checking count tuple:", count_tuple, counts_lookup[count_tuple])
+                    dest_types.append((str(count_tuple[2]), int(count_tuple[3])))
+                    counts.append(counts_lookup[count_tuple])
 
+            # gather counts in consistent order
             # apply softmax (with temperature)
             if temperature != 1.0:
                 logits = np.array(counts) / float(temperature)
             else:
                 logits = np.array(counts, dtype=float)
             probs = softmax(logits) if logits.size > 0 else np.array([])
-
-            graph[src_type][src_dir] = {}
-            for (t, d), c, p in zip(target_pairs, counts, probs):
-                if t not in graph[src_type][src_dir]:
-                    graph[src_type][src_dir][t] = {}
-                graph[src_type][src_dir][t][d] = float(p)
+            # Construir o grafo de transição
+            graph[src_type][str(src_dir)] = {}
+            for i, dest in enumerate(dest_types):
+                dest_type, dest_dir = dest
+                prob = float(probs[i]) if i < len(probs) else 0.0
+                graph[src_type][str(src_dir)][(dest_type, dest_dir)] = prob
 
                 records.append({
                     "last_shot_type": src_type,
                     "last_shot_direction": src_dir,
-                    "shot_type": t,
-                    "shot_direction": d,
-                    "count": int(c),
-                    "probability": float(p)
+                    "shot_type": dest_type,
+                    "shot_direction": dest_dir,
+                    "probability": prob
                 })
 
+
     df_out = pd.DataFrame.from_records(records)
-    return graph, df_out
+    df_out.to_csv(
+        "data/processed/shot_transition_graph_charting-m-points.csv", index=False
+    )
+    # print("Source:", src_type, src_dir)
+    # print(graph['f']['1'])
+    return graph
 
 
-if __name__ == "__main__":
-    # Example CLI: writes probabilities to data/processed/shot_transition_probs.csv
-    project_root = Path(__file__).parent.parent.parent
-    counts_path = project_root / "data" / "processed" / "shot_transitions_parsed_charting-m-points-2010s.csv"
-    out_path = project_root / "data" / "processed" / "shot_transition_probs.csv"
-
-    graph, probs_df = build_transition_graph_from_counts(counts_csv=counts_path)
-    probs_df.to_csv(out_path, index=False)
-    print(f"Wrote transition probabilities to {out_path}")
+print("Building transition graph...")
+print(build_transition_graph())
+print("Done.")
