@@ -113,5 +113,5 @@ def build_transition_graph():
     df_out = pd.DataFrame.from_records(records)
     df_out.to_csv("data/processed/shot_transition_graph_charting-m-points.csv", index=False)
     #print("Source:", src_type, src_dir)
-    print(graph['f']['1'])
+    #print(graph['f']['1'])
     return graph
