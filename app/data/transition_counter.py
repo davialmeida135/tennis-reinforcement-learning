@@ -4,7 +4,8 @@ from app.models.shot import Shot
 
 class TransitionBuilder:
     def __init__(self):
-        self.transition_counts : defaultdict[tuple, int] = defaultdict(int)
+        self.unwanted_characters = {"unknown", "q", "0"}
+        self.errors_and_winners = {"@", "#", "winner"}
 
 
     def build(self, df: pl.DataFrame) -> pl.DataFrame:
@@ -15,6 +16,29 @@ class TransitionBuilder:
             shot_direction = shot_row["shot_direction"]
             last_shot_type = shot_row["last_shot_type"]
             last_shot_direction = shot_row["last_shot_direction"]
+
+            # Ignorar transições com valores desconhecidos ou inválidos
+            if (shot_type in self.unwanted_characters or
+                shot_direction in self.unwanted_characters or
+                last_shot_type in self.unwanted_characters or
+                last_shot_direction in self.unwanted_characters):
+                continue
+
+            # Transições entre erros e winners não são consideradas
+            if (shot_type in self.errors_and_winners and
+                last_shot_type in self.errors_and_winners):
+                continue
+
+            # Antes de um saque só pode vir erro ou winner
+            if (last_shot_type not in self.errors_and_winners and
+                shot_type == "serve"):
+                continue
+
+            # Depois de um erro ou winner só pode vir saque
+            if (last_shot_type in self.errors_and_winners and
+                shot_type != "serve"):
+                continue
+
             state = (last_shot_type, last_shot_direction)
             action = (shot_type, shot_direction)
             key = (state, action)
