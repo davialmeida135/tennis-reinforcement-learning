@@ -123,6 +123,8 @@ class MatchParser:
             if char in self.stroke_types:
                 self.shot.shot_type = char
                 continue
+
+            # Erros, winners e direções significam "fim do golpe", então avançamos o número do golpe
             elif char in self.stroke_errors:
 
                 self.shot.shot_type = f"{char}"
