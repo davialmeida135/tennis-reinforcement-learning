@@ -127,7 +127,6 @@ def build_transition_graph():
             
             probs = adjusted/adjusted.sum()
 
-            return dest_types, counts, probs, probs.sum()
             # Construir o grafo de transição
             graph[src_type][str(src_dir)] = {}
             for i, dest in enumerate(dest_types):
