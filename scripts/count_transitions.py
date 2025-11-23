@@ -14,7 +14,8 @@ if __name__ == "__main__":
         dtypes = {
             "p1_score": pl.Utf8,  # Set p1_score as string
             "p2_score": pl.Utf8,  # Set p2_score as string
-            # Add other columns here if needed
+            "shot_direction": pl.Utf8,  # Allow non-numeric values like "unknown"
+            "last_shot_direction": pl.Utf8,  # Allow non-numeric values like "unknown"
         }
         df = pl.read_csv(data_path, dtypes=dtypes)
         builder = TransitionBuilder()

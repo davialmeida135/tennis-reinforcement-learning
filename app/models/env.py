@@ -5,6 +5,9 @@ class Action(BaseModel):
     shot_type: str
     shot_direction: str
 
+    def to_tuple(self, types_dict, directions_dict) -> tuple:
+        return (types_dict[self.shot_type], directions_dict[self.shot_direction])
+
 
 class State(BaseModel):
     last_shot_type: str
