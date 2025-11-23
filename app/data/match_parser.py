@@ -31,23 +31,6 @@ class MatchParser:
         self.winners = ["*"]
         self.remover = ["7", "8", "9", "+", "=", "-", ";", "^"] + self.serve_errors
 
-        self.goal_columns = [
-            "match_id",
-            "point_id",
-            "game_score",
-            "set_score",
-            "previous_shot_type",
-            "previous_shot_direction",
-            "player",
-            "rally_number",
-            "shot_number",
-            "shot_type",
-            "shot_direction",
-            "is_winner",
-            "is_error",
-            "is_serve",
-        ]
-
         self.shot: Shot = Shot(
             match_id="0000",
             rally_number=1,
