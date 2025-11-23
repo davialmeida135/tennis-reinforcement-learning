@@ -39,12 +39,8 @@ class TennisEnv:
         self.reverse_action_space = (
             {v: k for k, v in self.action_space.items()} if self.action_space else None
         )
-        self.direction_space = {0: "1", 1: "2", 2: "3"}
-        self.reverse_direction_space = (
-            {v: k for k, v in self.direction_space.items()}
-            if self.direction_space
-            else None
-        )
+        self.direction_space = [1, 2, 3]
+
         self.errors = {"@", "#"}
         self.winners = {"winner"}
 
@@ -52,7 +48,7 @@ class TennisEnv:
 
         if serve_first:
             initial_shot_type = "#"
-            initial_shot_direction = "unknown"
+            initial_shot_direction = random.choice(self.direction_space)
             self.turn = Turn.PLAYER  # Player's turn
             self.server = Turn.PLAYER
         else:
@@ -112,38 +108,38 @@ class TennisEnv:
         return self.state, reward, done, info
 
     def _choose_next_action(self, action: Action) -> Action:
-        # possible_next_actions = self.transition_graph.get(action.shot_type, {}).get(
-        #     action.shot_direction, {}
-        # )
-        # if possible_next_actions is None:
-        #     raise ValueError("No possible transitions from current state.")
+        possible_next_actions = self.transition_graph.get(action.shot_type, {}).get(
+            action.shot_direction, {}
+        )
+        if possible_next_actions is None:
+            raise ValueError("No possible transitions from current state.")
 
-        # # Sample next state based on transition probabilities
-        # # Build lists of candidates and their probabilities
-        # candidates = list(possible_next_actions.keys())
-        # # print(possible_next_actions)
-        # probs = list(possible_next_actions.values())
+        # Sample next state based on transition probabilities
+        # Build lists of candidates and their probabilities
+        candidates = list(possible_next_actions.keys())
+        # print(possible_next_actions)
+        probs = list(possible_next_actions.values())
 
-        # if not candidates:
-        #     raise ValueError("No transitions available from given action.")
+        if not candidates:
+            raise ValueError("No transitions available from given action.")
 
-        # total = sum(probs)
-        # if total <= 0:
-        #     raise ValueError("Transition probabilities sum to zero.")
+        total = sum(probs)
+        if total <= 0:
+            raise ValueError("Transition probabilities sum to zero.")
 
         # Sample next state
-        # next_shot_type, next_shot_direction = random.choices(
-        #     candidates, weights=probs, k=1
-        # )[0]
-
-        # FIXME: DADOS MOCKADOS PARA TESTE
         next_shot_type, next_shot_direction = random.choices(
-            [("#", "3"), ("f","1"), ("b","2"), ("winner","1")], k=1
+            candidates, weights=probs, k=1
         )[0]
 
-        if action.shot_type in self.errors or action.shot_type in self.winners:
-            next_shot_direction = random.choice(["1", "2", "3"])
-            next_shot_type = "serve"
+        # FIXME: DADOS MOCKADOS PARA TESTE
+        # next_shot_type, next_shot_direction = random.choices(
+        #     [("#", "3"), ("f","1"), ("b","2"), ("winner","1")], k=1
+        # )[0]
+
+        # if action.shot_type in self.errors or action.shot_type in self.winners:
+        #     next_shot_direction = random.choice(["1", "2", "3"])
+        #     next_shot_type = "serve"
 
         print(f"Chosen next action: ({next_shot_type}, {next_shot_direction})")
 
@@ -168,7 +164,9 @@ class TennisEnv:
             print("Primeiro saque perdido, segunda chance.")
             return
 
-        game_ended = random.choices([True, False], weights=[0.5, 0.5])[0]  # Mocked for testing
+        game_ended = random.choices([True, False], weights=[0.5, 0.5])[
+            0
+        ]  # Mocked for testing
 
         if player_scored:
             print("Ponto para o PLAYER")
@@ -199,7 +197,7 @@ class TennisEnv:
         is_serve = self.state.last_shot_type == "serve"
         if next_actions[0].shot_type in self.errors:
             if self.turn == Turn.PLAYER:
-                # Erro do player, PC scores 
+                # Erro do player, PC scores
                 print("Player errou")
                 self._update_score(player_scored=False, is_serve=is_serve)
                 self._update_state(next_actions[0])
@@ -224,6 +222,7 @@ class TennisEnv:
                 self._update_state(next_actions[0])
                 return
 
+        self._update_state(next_actions[0])
         # Se chegou aqui, é um lance normal do PC, verificar se o PC errou no segundo lance
         self.turn = Turn.PC
 
@@ -240,7 +239,7 @@ class TennisEnv:
             self._update_score(player_scored=False)
             self._update_state(next_actions[1])
             return
-        
+
         # Se chegou aqui, o ponto continua
         self._update_state(next_actions[0])
         self.turn = Turn.PLAYER
@@ -259,20 +258,32 @@ class TennisEnv:
 
 if __name__ == "__main__":
     # Example usage
-    from app.data.transition_graph import build_transition_graph
+    from app.data.transition_graph import TransitionBuilder
     import random
+    import pathlib
+
+    project_root = pathlib.Path(__file__).parent.parent.parent
+    data_path = (
+        project_root
+        / "data"
+        / "processed"
+        / "shot_transitions_parsed_charting-m-points-2020s.csv"
+    )
+
     start = time.time()
-    transition_graph = build_transition_graph()
+    graph_builder = TransitionBuilder(transitions_path=str(data_path))
+    transition_graph = graph_builder.build()
     end = time.time()
+    
     print(f"Transition graph built in {end - start} seconds")
-    #print(transition_graph)
+    # print(transition_graph)
     env = TennisEnv(transition_graph, serve_first=True)
 
     start = time.time()
-    next_state, reward, done, info = env.step(("f", "1"))
+    next_state, reward, done, info = env.step(("serve", 1))
     end = time.time()
     print(f"Step took {end - start} seconds")
-    #env.step(("f", "2"))
-    #env.step(("b", "1"))
-    #env.step(("@", "unknown"))
+    # env.step(("f", "2"))
+    # env.step(("b", "1"))
+    # env.step(("@", "unknown"))
     print(next_state, reward, done, info)

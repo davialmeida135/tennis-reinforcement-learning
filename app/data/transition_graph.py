@@ -118,12 +118,11 @@ class TransitionBuilder:
                 probs = self._calculate_probabilities(counts, self.temperature)
 
                 # Construir o grafo de transição
-                graph[src_type][str(src_dir)] = {}
+                graph[src_type][int(src_dir)] = {}
                 for i, dest in enumerate(dest_types):
                     dest_type, dest_dir = dest
                     prob = float(probs[i]) if i < len(probs) else 0.0
-                    graph[src_type][str(src_dir)][(dest_type, dest_dir)] = prob
-
+                    graph[src_type][int(src_dir)][(dest_type, int(dest_dir))] = prob
                     records.append(
                         {
                             "last_shot_type": src_type,

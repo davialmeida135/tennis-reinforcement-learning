@@ -3,7 +3,7 @@ from typing import Optional
 
 class Action(BaseModel):
     shot_type: str
-    shot_direction: str
+    shot_direction: int
 
     def to_tuple(self, types_dict, directions_dict) -> tuple:
         return (types_dict[self.shot_type], directions_dict[self.shot_direction])
@@ -11,7 +11,7 @@ class Action(BaseModel):
 
 class State(BaseModel):
     last_shot_type: str
-    last_shot_direction: str
+    last_shot_direction: int
     player_game_score: str
     player_set_score: int
     pc_game_score: str
