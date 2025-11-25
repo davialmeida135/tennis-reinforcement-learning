@@ -1,14 +1,7 @@
-from enum import Enum
 import time
 from typing import Dict, Tuple, Optional
-from app.models.env import Action, State
+from app.models.env import Action, State, Turn
 import random
-
-
-class Turn(Enum):
-    PLAYER = 1
-    PC = 0
-
 
 class TennisEnv:
     def __init__(

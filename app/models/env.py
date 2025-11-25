@@ -1,5 +1,11 @@
+from enum import Enum
 from pydantic import BaseModel
 from typing import Optional
+
+class Turn(Enum):
+    PLAYER = 1
+    PC = 0
+
 
 class Action(BaseModel):
     shot_type: str
