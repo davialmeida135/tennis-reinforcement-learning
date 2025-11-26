@@ -356,4 +356,4 @@ if __name__ == "__main__":
     # env.step(("f", "2"))
     # env.step(("b", "1"))
     # env.step(("@", "unknown"))
-    print(next_state, reward, done, info)
+    print(f"State: {next_state},\nReward: {reward},\nDone: {done},\nInfo: {info}")
