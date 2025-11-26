@@ -11,6 +11,14 @@ class TennisEnv:
         transition_graph: Dict[str, Dict[str, Dict[tuple, float]]],
         serve_first: bool = True,
     ):
+        self.POINT_WIN_REWARD = 1
+        self.POINT_LOSS_PENALTY = -1
+        self.GAME_WIN_REWARD = 10
+        self.GAME_LOSS_PENALTY = -10
+        self.SET_WIN_REWARD = 50
+        self.SET_LOSS_PENALTY = -50
+        self.BASE_PENALTY = -0.0
+
         self.action_space = {
             0: "serve",
             1: "b",
@@ -63,6 +71,7 @@ class TennisEnv:
         )
         self.transition_graph = transition_graph
         self.match = TennisMatch()
+        self.match.start_match()
 
     def reset(self):
         # TODO
@@ -72,6 +81,7 @@ class TennisEnv:
     def step(self, action):
 
         reward = 0
+        done = False
 
         action = Action(shot_type=action[0], shot_direction=action[1])
         self._update_state(action)
@@ -84,7 +94,10 @@ class TennisEnv:
         )
         next_actions = self._choose_next_2_actions(action)
 
-        new_state = self._compute_actions(next_actions)
+        new_state, new_reward = self._compute_actions(next_actions)
+
+        reward += new_reward
+
         if new_state is not None:
             self.state.player_game_score = new_state[0]
             self.state.pc_game_score = new_state[1]
@@ -98,18 +111,16 @@ class TennisEnv:
             )
             next_actions = self._choose_next_2_actions(action)
             self._update_state(next_actions[0])
-            new_state = self._compute_actions(next_actions)
+            new_state, new_reward = self._compute_actions(next_actions)
+            reward += new_reward
+
             if new_state is not None:
                 self.state.player_game_score = new_state[0]
                 self.state.pc_game_score = new_state[1]
                 self.state.player_set_score = new_state[2]
                 self.state.pc_set_score = new_state[3]
 
-        reward += 1
-
         # Apply action to the environment and update state
-        reward = 0
-        done = False
         info = {}
         self.turn = Turn.PLAYER
         return self.state, reward, done, info
@@ -203,6 +214,12 @@ class TennisEnv:
         self.turn = Turn.PLAYER if self.server == Turn.PLAYER else Turn.PC
         print(f"Turno para: {self.turn}")
 
+        # Atualiza o placar do estado
+        self.state.player_game_score = current_game_p1
+        self.state.pc_game_score = current_game_p2
+        self.state.player_set_score = current_set_p1
+        self.state.pc_set_score = current_set_p2
+
         return (
             current_game_p1,
             current_game_p2,
@@ -212,6 +229,30 @@ class TennisEnv:
             set_winner,
         )
 
+    def _get_reward(self, state, player_scored: bool) -> int:
+        reward = self.BASE_PENALTY
+
+        if not state:
+            return reward
+
+        game_winner = state[4]
+        set_winner = state[5]
+
+        if player_scored:
+            reward += self.POINT_WIN_REWARD
+            if game_winner == Turn.PLAYER:
+                reward += self.GAME_WIN_REWARD
+            if set_winner == Turn.PLAYER:
+                reward += self.SET_WIN_REWARD
+        else:
+            reward += self.POINT_LOSS_PENALTY
+            if game_winner == Turn.PC:
+                reward += self.GAME_LOSS_PENALTY
+            if set_winner == Turn.PC:
+                reward += self.SET_LOSS_PENALTY
+
+        return reward
+
     def _compute_actions(self, next_actions: list[Action]) -> State:
         # Primeira ação é ou um erro/winner do jogador ou um lance normal do pc
         is_serve = self.state.last_shot_type == "serve"
@@ -220,29 +261,36 @@ class TennisEnv:
                 # Erro do player, PC scores
                 print("Player errou")
                 new_state = self._update_score(player_scored=False, is_serve=is_serve)
+                new_reward = self._get_reward(new_state, player_scored=False)
                 self._update_state(next_actions[0])
-                return new_state
+                return new_state, new_reward
             elif self.turn == Turn.PC:
                 # Erro do PC, Player scores
                 print("PC errou")
                 new_state = self._update_score(player_scored=True, is_serve=is_serve)
+                new_reward = self._get_reward(new_state, player_scored=True)
                 self._update_state(next_actions[0])
-                return new_state
+                return new_state, new_reward
+
         elif next_actions[0].shot_type in self.winners:
             if self.turn == Turn.PLAYER:
                 # Player made a winner, Player scores
                 print("Player fez um winner")
                 new_state = self._update_score(player_scored=True)
+                new_reward = self._get_reward(new_state, player_scored=True)
                 self._update_state(next_actions[0])
-                return new_state
+                return new_state, new_reward
             elif self.turn == Turn.PC:
                 # PC made a winner, PC scores
                 print("PC fez um winner")
                 new_state = self._update_score(player_scored=False)
+                new_reward = self._get_reward(new_state, player_scored=False)
                 self._update_state(next_actions[0])
-                return new_state
+                return new_state, new_reward
 
         self._update_state(next_actions[0])
+        is_serve = self.state.last_shot_type == "serve"
+
         # Se chegou aqui, é um lance normal do PC, verificar se o PC errou no segundo lance
         self.turn = Turn.PC
 
@@ -250,21 +298,23 @@ class TennisEnv:
             # Erro do Player, PC scores
             print("PC errou seu lance no segundo lance")
             new_state = self._update_score(player_scored=True, is_serve=is_serve)
+            new_reward = self._get_reward(new_state, player_scored=True)
             self._update_state(next_actions[1])
-            return new_state
+            return new_state, new_reward
         # Agora ver se o PC fez um winner no segundo lance
         elif next_actions[1].shot_type in self.winners:
             # Player made a winner, Player scores
             print("PC fez um winner no segundo lance")
             new_state = self._update_score(player_scored=False)
+            new_reward = self._get_reward(new_state, player_scored=False)
             self._update_state(next_actions[1])
-            return new_state
+            return new_state, new_reward
 
         # Se chegou aqui, o ponto continua
         self._update_state(next_actions[0])
         self.turn = Turn.PLAYER
         print("Ponto continua, turno de:", self.turn)
-        return None
+        return None, self.BASE_PENALTY
 
     def _update_state(self, action: Action):
         self.state.last_shot_type = action.shot_type

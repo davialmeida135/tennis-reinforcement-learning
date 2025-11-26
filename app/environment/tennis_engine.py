@@ -26,10 +26,10 @@ class TennisMatch:
 
         # Return current points, current set, game_winner, match_winner
         return (
-            self.match_moment.current_game_p1,
-            self.match_moment.current_game_p2,
-            self.match_moment.current_set_p1,
-            self.match_moment.current_set_p2,
+            self.match_moment.current_game.player1_score,
+            self.match_moment.current_game.player2_score,
+            self.match_moment.current_set.player1_score,
+            self.match_moment.current_set.player2_score,
             game_winner,
             set_winner
         )
