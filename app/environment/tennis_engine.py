@@ -20,78 +20,83 @@ class TennisMatch:
 
     def point(self, player):
         if isinstance(self.match_moment.current_game, Tiebreak):
-            self.update_tiebreak(player)
+            game_winner, set_winner = self.update_tiebreak(player)
         elif isinstance(self.match_moment.current_game, Game):
-            self.update_game(player)
+            game_winner, set_winner = self.update_game(player)
 
-        # Return current points, current set and match_over/game_over
+        # Return current points, current set, game_winner, match_winner
         return (
             self.match_moment.current_game_p1,
             self.match_moment.current_game_p2,
             self.match_moment.current_set_p1,
             self.match_moment.current_set_p2,
+            game_winner,
+            set_winner
         )
 
     def update_game(self, player):
         if player == self.player1:
             if self.match_moment.current_game.player1_score == "0":
                 self.match_moment.current_game.player1_score = "15"
-                return None
+                return None, None
             elif self.match_moment.current_game.player1_score == "15":
                 self.match_moment.current_game.player1_score = "30"
-                return None
+                return None, None
             elif self.match_moment.current_game.player1_score == "30":
                 self.match_moment.current_game.player1_score = "40"
-                return None
+                return None, None
             elif (
                 self.match_moment.current_game.player1_score == "40"
                 and self.match_moment.current_game.player2_score in ["0", "15", "30"]
             ):
-                self.update_set(player)
-                return player
+                set_winner = self.update_set(player)
+                return player, set_winner
             elif (
                 self.match_moment.current_game.player1_score == "40"
                 and self.match_moment.current_game.player2_score == "40"
             ):
                 self.match_moment.current_game.player1_score = "AD"
-                return None
+                return None, None
             elif self.match_moment.current_game.player1_score == "AD":
-                self.update_set(player)
-                return player
+                set_winner = self.update_set(player)
+                return player, set_winner
             elif self.match_moment.current_game.player2_score == "AD":
                 self.match_moment.current_game.player1_score = "40"
                 self.match_moment.current_game.player2_score = "40"
-                return None
+                return None, None
 
         if player == self.player2:
             if self.match_moment.current_game.player2_score == "0":
                 self.match_moment.current_game.player2_score = "15"
-                return None
+                return None, None
             elif self.match_moment.current_game.player2_score == "15":
                 self.match_moment.current_game.player2_score = "30"
-                return None
+                return None, None
             elif self.match_moment.current_game.player2_score == "30":
                 self.match_moment.current_game.player2_score = "40"
-                return None
+                return None, None
             elif (
                 self.match_moment.current_game.player2_score == "40"
                 and self.match_moment.current_game.player1_score in ["0", "15", "30"]
             ):
-                self.update_set(player)
-                return player
+                set_winner = self.update_set(player)
+                return player, set_winner
             elif (
                 self.match_moment.current_game.player2_score == "40"
                 and self.match_moment.current_game.player1_score == "40"
             ):
                 self.match_moment.current_game.player2_score = "AD"
-                return None
+                return None, None
             elif self.match_moment.current_game.player2_score == "AD":
-                self.update_set(player)
-                return player
+                set_winner = self.update_set(player)
+                return player, set_winner
             elif self.match_moment.current_game.player1_score == "AD":
                 self.match_moment.current_game.player1_score = "40"
                 self.match_moment.current_game.player2_score = "40"
-                return None
+                return None, None
+
+            return None, None
+
     def update_set(self, player):
         if player == self.player1:
             self.match_moment.current_set.player1_score += 1
@@ -106,13 +111,13 @@ class TennisMatch:
                 self.match_moment.current_set = Set()
                 self.match_moment.current_game = Game()
                 self.match_moment.match_score_p1 += 1
-                return
+                return player
             elif self.match_moment.current_set.player1_score == 7:
                 self.match_moment.sets.append(self.match_moment.current_set)
                 self.match_moment.current_set = Set()
                 self.match_moment.current_game = Game()
                 self.match_moment.match_score_p1 += 1
-                return
+                return player
 
         if player == self.player2:
             self.match_moment.current_set.player2_score += 1
@@ -126,19 +131,21 @@ class TennisMatch:
                 self.match_moment.sets.append(self.match_moment.current_set)
                 self.match_moment.current_set = Set()
                 self.match_moment.match_score_p2 += 1
-                return
+                return player
             elif self.match_moment.current_set.player2_score == 7:
                 self.match_moment.sets.append(self.match_moment.current_set)
                 self.match_moment.current_set = Set()
                 self.match_moment.current_game = Game()
                 self.match_moment.match_score_p2 += 1
-                return
+                return player
 
         if (
             self.match_moment.current_set.player1_score == 6
             and self.match_moment.current_set.player2_score == 6
         ):
             self.match_moment.current_game = Tiebreak()
+
+        return None
 
     def update_tiebreak(self, player):
         if player == self.player1:
@@ -153,7 +160,8 @@ class TennisMatch:
             - self.match_moment.current_game.player2_score
             >= self.match_moment.current_game.min_difference
         ):
-            self.update_set(self.player1)
+            set_winner = self.update_set(self.player1)
+            return player, set_winner
         elif (
             self.match_moment.current_game.player2_score
             >= self.match_moment.current_game.max_score
@@ -162,6 +170,9 @@ class TennisMatch:
             >= self.match_moment.current_game.min_difference
         ):
             self.update_set(self.player2)
+            return player, set_winner
+
+        return None, None
 
     def relatorio(self):
         # print("Match id: ", self.match_id)
