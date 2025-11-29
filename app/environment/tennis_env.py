@@ -18,8 +18,9 @@ class TennisEnv:
         self.SET_WIN_REWARD = 50
         self.SET_LOSS_PENALTY = -50
         self.BASE_PENALTY = -0.0
+        self.ILLEGAL_ACTION_PENALTY = -20
 
-        self.action_space = {
+        self.stroke_space = {
             0: "serve",
             1: "b",
             2: "f",
@@ -39,10 +40,14 @@ class TennisEnv:
             16: "t",
             17: "k",
         }
-        self.reverse_action_space = (
-            {v: k for k, v in self.action_space.items()} if self.action_space else None
+        self.reverse_stroke_space = (
+            {v: k for k, v in self.stroke_space.items()} if self.stroke_space else None
         )
         self.direction_space = [1, 2, 3]
+
+        self.action_space = [
+            (shot_type, shot_direction) for shot_type in self.stroke_space.values() for shot_direction in self.direction_space
+        ]
 
         self.errors = {"@", "#"}
         self.winners = {"winner"}
@@ -87,7 +92,7 @@ class TennisEnv:
         is_illegal = self._filter_illegal_action(action)
         if is_illegal:
             print("Ação ilegal detectada:", action)
-            return self.state, -10, False, {}
+            return self.state, self.ILLEGAL_ACTION_PENALTY, False, {}
         
         # Aplica ação do jogador
         self._update_state(action)
@@ -137,7 +142,7 @@ class TennisEnv:
             if action.shot_type != "serve":
                 return True  # Apenas saque é permitido após erro ou winner
             
-        if self.state.last_shot_type not in self.action_space.values():
+        if self.state.last_shot_type not in self.stroke_space.values():
             if action.shot_type == "serve":
                 return True  # Saque não é permitido após saque ou golpe
 
