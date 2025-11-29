@@ -78,12 +78,18 @@ class TennisEnv:
         self.state: State = None
         self.match = TennisMatch()
 
-    def step(self, action):
+    def step(self, action:tuple[str, int]) -> Tuple[State, int, bool, dict]:
 
         reward = 0
         done = False
 
         action = Action(shot_type=action[0], shot_direction=action[1])
+        is_illegal = self._filter_illegal_action(action)
+        if is_illegal:
+            print("Ação ilegal detectada:", action)
+            return self.state, -10, False, {}
+        
+        # Aplica ação do jogador
         self._update_state(action)
         # Simula até acabar a rodada do PC
         print(f"Vez do {self.turn}")
@@ -124,6 +130,18 @@ class TennisEnv:
         info = {}
         self.turn = Turn.PLAYER
         return self.state, reward, done, info
+
+    def _filter_illegal_action(self, action: Action) -> bool:
+        # Verifica se a ação é legal no estado atual
+        if self.state.last_shot_type in self.errors or self.state.last_shot_type in self.winners:
+            if action.shot_type != "serve":
+                return True  # Apenas saque é permitido após erro ou winner
+            
+        if self.state.last_shot_type not in self.action_space.values():
+            if action.shot_type == "serve":
+                return True  # Saque não é permitido após saque ou golpe
+
+        return False
 
     def _choose_next_action(self, action: Action) -> Action:
         possible_next_actions = self.transition_graph.get(action.shot_type, {}).get(
