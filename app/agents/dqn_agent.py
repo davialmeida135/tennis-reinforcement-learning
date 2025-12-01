@@ -35,8 +35,9 @@ class DQNAgent(BaseAgent):
         batch_size: int = 32,
         target_update_freq: int = 100
     ):
+        self.env = env
         self.state_size = len(env.state)
-        self.action_size = len(env.stroke_space)
+        self.action_size = len(env.action_space)
         self.lr = lr
         self.gamma = gamma
         self.epsilon = epsilon
@@ -84,26 +85,21 @@ class DQNAgent(BaseAgent):
         """Generate random valid action"""
         # Implement based on your Action class
         # This is a placeholder - adjust based on your action space
-        shot_types = ["f", "b", "s", "v"]  # forehand, backhand, slice, volley
-        directions = [1, 2, 3]  # cross-court, middle, down-the-line
+        action = random.choice(list(self.env.action_space))
         
         return Action(
-            shot_type=random.choice(shot_types),
-            shot_direction=random.choice(directions)
+            shot_type=action[0],
+            shot_direction=action[1]
         )
     
     def _idx_to_action(self, idx: int) -> Action:
         """Convert action index to Action object"""
         # Implement based on your action space encoding
-        shot_types = ["f", "b", "s", "v"]
-        directions = [1, 2, 3]
-        
-        shot_type_idx = idx // len(directions)
-        direction_idx = idx % len(directions)
+        action = list(self.env.action_space)[idx]
         
         return Action(
-            shot_type=shot_types[shot_type_idx],
-            shot_direction=directions[direction_idx]
+            shot_type=action[0],
+            shot_direction=action[1]
         )
     
     def replay(self):
