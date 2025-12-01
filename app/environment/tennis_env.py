@@ -10,16 +10,24 @@ class TennisEnv:
         self,
         transition_graph: Dict[str, Dict[str, Dict[tuple, float]]],
         serve_first: bool = True,
+        point_win_reward: int = 1,
+        point_loss_penalty: int = -1,
+        game_win_reward: int = 10,
+        game_loss_penalty: int = -10,
+        set_win_reward: int = 50,
+        set_loss_penalty: int = -50,
+        base_penalty: float = -0.0,
+        illegal_action_penalty: int = -20,
     ):
-        self.POINT_WIN_REWARD = 1
-        self.POINT_LOSS_PENALTY = -1
-        self.GAME_WIN_REWARD = 10
-        self.GAME_LOSS_PENALTY = -10
-        self.SET_WIN_REWARD = 50
-        self.SET_LOSS_PENALTY = -50
-        self.BASE_PENALTY = -0.0
-        self.ILLEGAL_ACTION_PENALTY = -20
-
+        self.POINT_WIN_REWARD = point_win_reward
+        self.POINT_LOSS_PENALTY = point_loss_penalty
+        self.GAME_WIN_REWARD = game_win_reward
+        self.GAME_LOSS_PENALTY = game_loss_penalty
+        self.SET_WIN_REWARD = set_win_reward
+        self.SET_LOSS_PENALTY = set_loss_penalty
+        self.BASE_PENALTY = base_penalty
+        self.ILLEGAL_ACTION_PENALTY = illegal_action_penalty
+        
         self.stroke_space = {
             0: "serve",
             1: "b",
@@ -142,7 +150,7 @@ class TennisEnv:
             if action.shot_type != "serve":
                 return True  # Apenas saque é permitido após erro ou winner
             
-        if self.state.last_shot_type not in self.stroke_space.values():
+        if self.state.last_shot_type in self.stroke_space.values():
             if action.shot_type == "serve":
                 return True  # Saque não é permitido após saque ou golpe
 
@@ -371,6 +379,7 @@ if __name__ == "__main__":
     print(f"Transition graph built in {end - start} seconds")
     # print(transition_graph)
     env = TennisEnv(transition_graph, serve_first=True)
+    print(env.action_space)
 
     start = time.time()
     next_state, reward, done, info = env.step(("serve", 1))
