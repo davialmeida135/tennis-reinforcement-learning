@@ -109,7 +109,7 @@ class DQNAgent(BaseAgent):
     def replay(self):
         """Train the model on a batch of experiences"""
         if len(self.memory) < self.batch_size:
-            return
+            return None
         
         batch = random.sample(self.memory, self.batch_size)
         states = torch.FloatTensor([e[0] for e in batch]).to(self.device)
@@ -136,6 +136,8 @@ class DQNAgent(BaseAgent):
         # Decay epsilon
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
+        
+        return loss.item()  # Return loss value for logging
     
     def save(self, filepath: str):
         """Save model weights"""
