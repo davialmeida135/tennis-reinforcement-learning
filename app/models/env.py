@@ -23,6 +23,9 @@ class State(BaseModel):
     pc_game_score: str
     pc_set_score: int
     player_serves: bool
+
+    def __len__(self):
+        return 7
     
     def to_tuple(self) -> tuple:
         return (
