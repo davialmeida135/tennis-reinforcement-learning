@@ -16,7 +16,7 @@ def main():
     """Main training script for tennis RL agent"""
     
     # Set up paths
-    data_path = project_root / "data" / "processed" / "shot_transitions_parsed_charting-m-points-2020s.csv"
+    data_path = project_root / "data" / "processed" / "shot_transitions_combined.csv"
     
     print("Building transition graph...")
     # Build transition graph

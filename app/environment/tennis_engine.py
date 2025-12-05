@@ -169,7 +169,7 @@ class TennisMatch:
             - self.match_moment.current_game.player1_score
             >= self.match_moment.current_game.min_difference
         ):
-            self.update_set(self.player2)
+            set_winner = self.update_set(self.player2)
             return player, set_winner
 
         return None, None

@@ -63,19 +63,19 @@ class TennisEnv:
         self.first_serve = True
 
         if serve_first:
-            initial_shot_type = "#"
-            initial_shot_direction = random.choice(self.direction_space)
+            self.initial_shot_type = "#"
+            self.initial_shot_direction = random.choice(self.direction_space)
             self.turn = Turn.PLAYER  # Player's turn
             self.server = Turn.PLAYER
         else:
-            initial_shot_type = "serve"
-            initial_shot_direction = random.choice(self.direction_space)
+            self.initial_shot_type = "serve"
+            self.initial_shot_direction = random.choice(self.direction_space)
             self.turn = Turn.PC  # PC's turn
             self.server = Turn.PC
 
         self.state: State = State(
-            last_shot_type=initial_shot_type,
-            last_shot_direction=initial_shot_direction,
+            last_shot_type=self.initial_shot_type,
+            last_shot_direction=self.initial_shot_direction,
             player_game_score="0",
             player_set_score=0,
             pc_game_score="0",
@@ -88,15 +88,25 @@ class TennisEnv:
 
     def reset(self):
         # TODO
-        self.state: State = None
+        self.state: State = State(
+            last_shot_type=self.initial_shot_type,
+            last_shot_direction=self.initial_shot_direction,
+            player_game_score="0",
+            player_set_score=0,
+            pc_game_score="0",
+            pc_set_score=0,
+            player_serves=self.server == Turn.PLAYER,
+        )
         self.match = TennisMatch()
 
-    def step(self, action:tuple[str, int]) -> Tuple[State, int, bool, dict]:
+    def step(self, action) -> Tuple[State, int, bool, dict]:
 
         reward = 0
         done = False
 
-        action = Action(shot_type=action[0], shot_direction=action[1])
+        if not isinstance(action, Action):
+            action = Action(shot_type=action[0], shot_direction=action[1])
+
         is_illegal = self._filter_illegal_action(action)
         if is_illegal:
             print("Ação ilegal detectada:", action)
@@ -123,6 +133,10 @@ class TennisEnv:
             self.state.player_set_score = new_state[2]
             self.state.pc_set_score = new_state[3]
 
+            if new_state[5] is not None:
+                    done = True
+                    print("Match ended!")
+
         while self.turn == Turn.PC:
             action = Action(
                 shot_type=self.state.last_shot_type,
@@ -138,6 +152,10 @@ class TennisEnv:
                 self.state.pc_game_score = new_state[1]
                 self.state.player_set_score = new_state[2]
                 self.state.pc_set_score = new_state[3]
+
+                if new_state[5] is not None:
+                    done = True
+                    print("Match ended!")
 
         # Apply action to the environment and update state
         info = {}
@@ -284,7 +302,7 @@ class TennisEnv:
 
         return reward
 
-    def _compute_actions(self, next_actions: list[Action]) -> State:
+    def _compute_actions(self, next_actions: list[Action]) -> tuple[tuple, int]:
         # Primeira ação é ou um erro/winner do jogador ou um lance normal do pc
         is_serve = self.state.last_shot_type == "serve"
         if next_actions[0].shot_type in self.errors:
