@@ -60,6 +60,32 @@ class TennisEnv:
         self.errors = {"@", "#"}
         self.winners = {"winner"}
 
+        self.last_shot_space = {
+            0: "serve",
+            1: "b",
+            2: "f",
+            3: "r",
+            4: "i",
+            5: "m",
+            6: "o",
+            7: "s",
+            8: "v",
+            9: "p",
+            10: "z",
+            11: "u",
+            12: "h",
+            13: "l",
+            14: "j",
+            15: "y",
+            16: "t",
+            17: "k",
+            18: "@",
+            19: "#",
+            20: "winner",
+        }
+        self.reverse_last_shot_space = {v: k for k, v in self.last_shot_space.items()}
+        
+
         self.first_serve = True
 
         if serve_first:
