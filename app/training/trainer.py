@@ -6,6 +6,7 @@ from typing import List, Dict, Optional
 import json
 import mlflow
 import mlflow.pytorch
+from app.agents.base_agent import BaseAgent
 from app.environment.tennis_env import TennisEnv, Action, Turn
 from app.agents.dqn_agent import DQNAgent
 
@@ -14,7 +15,7 @@ class Trainer:
     def __init__(
         self,
         env: TennisEnv,
-        agent: DQNAgent,
+        agent: BaseAgent,
         mlflow_tracking_uri: str = "https://mlflow.digi.com.br",
         experiment_name: str = "tennis-rl-dqn",
     ):
@@ -197,21 +198,40 @@ class Trainer:
             )
 
     def _log_hyperparameters(self, episodes: int, save_freq: int, eval_freq: int):
-        """Log all hyperparameters to MLflow"""
-        # Agent hyperparameters
-        mlflow.log_param("lr", self.agent.lr)
-        mlflow.log_param("gamma", self.agent.gamma)
-        mlflow.log_param("epsilon_initial", 1.0)  # Assuming initial epsilon
-        mlflow.log_param("epsilon_min", self.agent.epsilon_min)
-        mlflow.log_param("epsilon_decay", self.agent.epsilon_decay)
-        mlflow.log_param("memory_size", self.agent.memory.maxlen)
-        mlflow.log_param("batch_size", self.agent.batch_size)
-        mlflow.log_param("target_update_freq", self.agent.target_update_freq)
+        """Log all available agent and environment hyperparameters to MLflow."""
+        # Common agent hyperparameters
+        if hasattr(self.agent, "lr"):
+            mlflow.log_param("lr", self.agent.lr)
+        if hasattr(self.agent, "gamma"):
+            mlflow.log_param("gamma", self.agent.gamma)
+
+        # DQN-specific hyperparameters
+        if hasattr(self.agent, "epsilon"):
+            mlflow.log_param("epsilon_initial", 1.0)  # Assuming it starts at 1.0
+        if hasattr(self.agent, "epsilon_min"):
+            mlflow.log_param("epsilon_min", self.agent.epsilon_min)
+        if hasattr(self.agent, "epsilon_decay"):
+            mlflow.log_param("epsilon_decay", self.agent.epsilon_decay)
+        if hasattr(self.agent, "memory"):
+            mlflow.log_param("memory_size", self.agent.memory.maxlen)
+        if hasattr(self.agent, "batch_size"):
+            mlflow.log_param("batch_size", self.agent.batch_size)
+        if hasattr(self.agent, "target_update_freq"):
+            mlflow.log_param("target_update_freq", self.agent.target_update_freq)
 
         # Network architecture
-        mlflow.log_param("state_size", self.agent.state_size)
-        mlflow.log_param("action_size", self.agent.action_size)
-        mlflow.log_param("hidden_size", 128)  # Assuming default
+        if hasattr(self.agent, "state_size"):
+            mlflow.log_param("state_size", self.agent.state_size)
+        if hasattr(self.agent, "action_size"):
+            mlflow.log_param("action_size", self.agent.action_size)
+        # Assuming hidden_size is a common convention or you can add hasattr for it too
+        if hasattr(self.agent, "policy_network"):
+            # A simple way to get a parameter from the network
+            hidden_size = self.agent.policy_network.fc1.out_features
+            mlflow.log_param("hidden_size", hidden_size)
+        elif hasattr(self.agent, "q_network"):
+            hidden_size = self.agent.q_network.fc1.out_features
+            mlflow.log_param("hidden_size", hidden_size)
 
         # Training parameters
         mlflow.log_param("total_episodes", episodes)

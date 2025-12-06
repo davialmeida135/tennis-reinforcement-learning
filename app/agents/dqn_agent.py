@@ -11,16 +11,18 @@ from app.models.env import State
 
 
 class DQNNetwork(nn.Module):
-    def __init__(self, state_size: int, action_size: int, hidden_size: int = 128):
+    def __init__(self, state_size: int, action_size: int, hidden_size: int = 512):
         super(DQNNetwork, self).__init__()
         self.fc1 = nn.Linear(state_size, hidden_size)
         self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, action_size)
+        self.fc3 = nn.Linear(hidden_size, hidden_size)
+        self.fc4 = nn.Linear(hidden_size, action_size)
 
     def forward(self, x):
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
-        return self.fc3(x)
+        x = torch.relu(self.fc3(x))
+        return self.fc4(x)
 
 
 class DQNAgent(BaseAgent):

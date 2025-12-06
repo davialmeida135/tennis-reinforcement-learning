@@ -1,0 +1,90 @@
+import sys
+import pathlib
+from pathlib import Path
+
+# Add project root to Python path
+project_root = pathlib.Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+
+from app.agents.reinforce_agent import ReinforceAgent
+from app.environment.tennis_env import TennisEnv
+from app.training.trainer import Trainer
+from app.data.transition_graph import TransitionBuilder
+
+
+def main():
+    """Main training script for tennis RL agent"""
+    
+    # Set up paths
+    data_path = project_root / "data" / "processed" / "shot_transitions_combined.csv"
+    
+    print("Building transition graph...")
+    # Build transition graph
+    graph_builder = TransitionBuilder(
+        transitions_path=str(data_path),
+        temperature=1.0
+    )
+    transition_graph = graph_builder.build()
+    print("Transition graph built successfully!")
+    
+    # Create environment
+    print("Creating tennis environment...")
+    env = TennisEnv(
+        transition_graph=transition_graph,
+        serve_first=True,
+        illegal_action_penalty=-0.5
+        
+    )
+    
+    # Create Reinforce agent
+    print("Initializing Reinforce agent...")
+
+    agent = ReinforceAgent(
+        env=env,
+        lr=1e-4,
+        gamma=0.99,
+    )
+    # Create trainer
+    trainer = Trainer(
+        env=env,
+        agent=agent,
+        mlflow_tracking_uri="https://mlflow.digi.com.br",
+        experiment_name="tennis-rl-Reinforce"
+    )
+    
+    # Training configuration
+    training_config = {
+        "episodes": 100,
+        "save_freq": 100,
+        "eval_freq": 200,
+        "run_name": "Reinforce_tennis_v1",
+        "tags": {
+            "model_type": "Reinforce",
+            "environment": "tennis",
+            "data_source": "charting-m-points-2020s",
+            "temperature": "1.0"
+        }
+    }
+    
+    print(f"Starting training for {training_config['episodes']} episodes...")
+    
+    # Start training
+    trainer.train(**training_config)
+    
+    print("Training completed!")
+    
+    # Final evaluation
+    print("Running final evaluation...")
+    final_results = trainer.evaluate(episodes=100)
+    print(f"Final evaluation results:")
+    print(f"  Average reward: {final_results['avg_reward']:.2f}")
+    print(f"  Win rate: {final_results['win_rate']:.2%}")
+    print(f"  Average episode length: {final_results['avg_episode_length']:.1f}")
+    
+    # Save final plots
+    trainer.plot_training_history(save_path="training_results.png")
+    print("Training plots saved to training_results.png")
+
+
+if __name__ == "__main__":
+    main()
