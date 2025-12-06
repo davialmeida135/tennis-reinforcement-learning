@@ -85,7 +85,7 @@ class Trainer:
                     next_state, reward, done, info = self.env.step(action)
 
                     # Store experience
-                    shot_choices[(action.shot_type, action.shot_direction)] += 1
+                    #shot_choices[(action.shot_type, action.shot_direction)] += 1
                     if reward == self.env.ILLEGAL_ACTION_PENALTY:
                         illegal_actions += 1
                     action_idx = self._action_to_idx(action)
@@ -109,7 +109,7 @@ class Trainer:
                 self.training_history["episode_lengths"].append(steps)
                 self.training_history["epsilon_values"].append(self.agent.epsilon)
                 self.training_history["illegal_actions"].append(illegal_actions)
-                self.training_history["shot_choices"].append(dict(shot_choices))
+                #self.training_history["shot_choices"].append(dict(shot_choices))
                 # Record Q-values and losses
                 if episode_q_values:
                     avg_q_value = np.mean(episode_q_values)
@@ -126,7 +126,7 @@ class Trainer:
                 mlflow.log_metric("episode_length", steps, step=episode)
                 mlflow.log_metric("epsilon", self.agent.epsilon, step=episode)
                 mlflow.log_metric("illegal_actions", illegal_actions, step=episode)
-                mlflow.log_dict(dict(shot_choices), f"shot_choices_episode_{episode}.json")
+                #mlflow.log_dict(dict(shot_choices), f"shot_choices_episode_{episode}.json")
 
                 # Calculate and log win rate (last 100 episodes)
                 if episode >= 99:

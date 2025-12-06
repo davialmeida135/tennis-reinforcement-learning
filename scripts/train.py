@@ -32,6 +32,7 @@ def main():
     env = TennisEnv(
         transition_graph=transition_graph,
         serve_first=True,
+        illegal_action_penalty=-0.5
         
     )
     
@@ -39,14 +40,14 @@ def main():
     print("Initializing DQN agent...")
     agent = DQNAgent(
         env=env,
-        lr=0.001,
-        gamma=0.95,
+        lr=1e-4,
+        gamma=0.99,
         epsilon=1.0,
-        epsilon_min=0.01,
-        epsilon_decay=0.999,
+        epsilon_min=0.1,
+        epsilon_decay=0.9999,
         memory_size=10000,
-        batch_size=32,
-        target_update_freq=100
+        batch_size=64,
+        target_update_freq=10
     )
     
     # Create trainer
