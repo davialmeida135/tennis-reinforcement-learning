@@ -75,7 +75,7 @@ class DQNAgent(BaseAgent):
             return self._random_action()
         
         # Use neural network to choose action
-        state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.device)
+        state_tensor = torch.FloatTensor(state.encode(self.env)).unsqueeze(0).to(self.device)
         q_values = self.q_network(state_tensor)
         action_idx = torch.argmax(q_values).item()
         

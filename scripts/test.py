@@ -75,7 +75,8 @@ def main(
 
     print("Initializing agent...")
     agent = DQNAgent(
-        env=env
+        env=env,
+        epsilon=0.5
     )  # use defaults; ensure signature matches your implementation
 
     ckpt_path = project_root / checkpoint
