@@ -1,6 +1,6 @@
 from enum import Enum
 from pydantic import BaseModel
-from typing import Optional
+from typing import List, Optional
 
 class Turn(Enum):
     PLAYER = 1
@@ -38,7 +38,7 @@ class State(BaseModel):
             self.player_serves
         )
     
-    def encode(self, env):
+    def encode(self, env) -> List[int]:
         """Convert state tuple to numerical encoding"""
         # state_tuple = (last_shot_type, last_shot_direction, player_game_score, 
         #                player_set_score, pc_game_score, pc_set_score, player_serves)

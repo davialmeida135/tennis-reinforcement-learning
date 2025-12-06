@@ -66,7 +66,7 @@ class Trainer:
                     if hasattr(self.agent, 'q_network'):
                         import torch
                         with torch.no_grad():
-                            state_tensor = torch.FloatTensor(state).unsqueeze(0).to(self.agent.device)
+                            state_tensor = torch.FloatTensor(state.encode(self.env)).unsqueeze(0).to(self.agent.device)
                             q_vals = self.agent.q_network(state_tensor)
                             max_q_value = torch.max(q_vals).item()
                             episode_q_values.append(max_q_value)
@@ -216,13 +216,17 @@ class Trainer:
     
     def _action_to_idx(self, action: Action) -> int:
         """Convert Action to index for neural network"""
-        shot_types = ["f", "b", "s", "v"]
-        directions = [1, 2, 3]
-        
-        shot_type_idx = shot_types.index(action.shot_type)
-        direction_idx = directions.index(action.shot_direction)
-        
-        return shot_type_idx * len(directions) + direction_idx
+        # Use the actual action space from the environment
+        try:
+            action_tuple = (action.shot_type, action.shot_direction)
+            return self.env.action_space.index(action_tuple)
+        except ValueError:
+            # If action not in action_space, this is an error
+            raise ValueError(
+                f"Invalid action: {action}. "
+                f"Shot type '{action.shot_type}' with direction '{action.shot_direction}' "
+                f"is not in the environment's action space."
+            )
     
     def evaluate(self, episodes: int = 100) -> Dict:
         """Evaluate trained agent"""

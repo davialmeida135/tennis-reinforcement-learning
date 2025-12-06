@@ -98,6 +98,12 @@ class TennisEnv:
             player_serves=self.server == Turn.PLAYER,
         )
         self.match = TennisMatch()
+        # ensure TennisMatch is properly initialized (match_moment etc.)
+        self.match.start_match()
+        # reset serve flag so scoring logic behaves like at match start
+        self.first_serve = True
+        # return initial state so callers (scripts/test.py) receive it
+        return self.state
 
     def step(self, action) -> Tuple[State, int, bool, dict]:
 

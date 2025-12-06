@@ -7,6 +7,7 @@ from collections import deque
 from typing import Tuple, List
 from app.agents.base_agent import BaseAgent
 from app.environment.tennis_env import TennisEnv, Action
+from app.models.env import State
 
 
 class DQNNetwork(nn.Module):
@@ -68,7 +69,7 @@ class DQNAgent(BaseAgent):
         """Store experience in replay buffer"""
         self.memory.append((state, action, reward, next_state, done))
     
-    def act(self, state) -> Action:
+    def act(self, state: State) -> Action:
         """Choose action using epsilon-greedy policy"""
         if random.random() <= self.epsilon:
             # Random action
@@ -108,10 +109,10 @@ class DQNAgent(BaseAgent):
             return None
         
         batch = random.sample(self.memory, self.batch_size)
-        states = torch.FloatTensor([e[0] for e in batch]).to(self.device)
+        states = torch.FloatTensor([e[0].encode(self.env) for e in batch]).to(self.device)
         actions = torch.LongTensor([e[1] for e in batch]).to(self.device)
         rewards = torch.FloatTensor([e[2] for e in batch]).to(self.device)
-        next_states = torch.FloatTensor([e[3] for e in batch]).to(self.device)
+        next_states = torch.FloatTensor([e[3].encode(self.env) for e in batch]).to(self.device)
         dones = torch.BoolTensor([e[4] for e in batch]).to(self.device)
         
         current_q_values = self.q_network(states).gather(1, actions.unsqueeze(1))
