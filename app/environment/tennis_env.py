@@ -10,14 +10,15 @@ class TennisEnv:
         self,
         transition_graph: Dict[str, Dict[str, Dict[tuple, float]]],
         serve_first: bool = True,
-        point_win_reward: int = 1,
-        point_loss_penalty: int = -1,
-        game_win_reward: int = 10,
-        game_loss_penalty: int = -10,
-        set_win_reward: int = 50,
-        set_loss_penalty: int = -50,
-        base_penalty: float = -0.0,
-        illegal_action_penalty: int = -20,
+        point_win_reward: float = 0.1,
+        point_loss_penalty: float = -0.1,
+        game_win_reward: float = 2.0,
+        game_loss_penalty: float = -2.0,
+        set_win_reward: float = 10.0,
+        set_loss_penalty: float = -10.0,
+        base_penalty: float = -0.01,
+        illegal_action_penalty: int = -5,
+
     ):
         self.POINT_WIN_REWARD = point_win_reward
         self.POINT_LOSS_PENALTY = point_loss_penalty

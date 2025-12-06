@@ -48,7 +48,7 @@ class DQNAgent(BaseAgent):
         self.target_update_freq = target_update_freq
         
         # Experience replay buffer
-        self.memory = deque(maxlen=memory_size)
+        self.memory: deque[Tuple[State, int, float, State, bool]] = deque(maxlen=memory_size)
         
         # Neural networks
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -65,7 +65,7 @@ class DQNAgent(BaseAgent):
         """Copy weights from main network to target network"""
         self.target_network.load_state_dict(self.q_network.state_dict())
     
-    def remember(self, state, action, reward, next_state, done):
+    def remember(self, state: State, action: int, reward: float, next_state: State, done: bool):
         """Store experience in replay buffer"""
         self.memory.append((state, action, reward, next_state, done))
     
@@ -103,7 +103,7 @@ class DQNAgent(BaseAgent):
             shot_direction=action[1]
         )
     
-    def replay(self):
+    def replay(self) -> float:
         """Train the model on a batch of experiences"""
         if len(self.memory) < self.batch_size:
             return None

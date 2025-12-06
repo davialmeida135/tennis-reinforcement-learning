@@ -27,14 +27,19 @@ class Trainer:
             'loss_values': [],
             'q_values': []
         }
-        
+
+        self._action_to_idx_map = {
+            (shot_type, direction): idx
+            for idx, (shot_type, direction) in enumerate(self.env.action_space)
+        }
+
         # MLflow setup
         mlflow.set_tracking_uri(mlflow_tracking_uri)
         mlflow.set_experiment(experiment_name)
     
     def train(
         self, 
-        episodes: int = 1000, 
+        episodes: int = 100, 
         save_freq: int = 100,
         eval_freq: int = 200,
         run_name: Optional[str] = None,
@@ -63,13 +68,13 @@ class Trainer:
                     action = self.agent.act(state)
                     
                     # Log Q-values for analysis
-                    if hasattr(self.agent, 'q_network'):
-                        import torch
-                        with torch.no_grad():
-                            state_tensor = torch.FloatTensor(state.encode(self.env)).unsqueeze(0).to(self.agent.device)
-                            q_vals = self.agent.q_network(state_tensor)
-                            max_q_value = torch.max(q_vals).item()
-                            episode_q_values.append(max_q_value)
+                    # if hasattr(self.agent, 'q_network'):
+                    #     import torch
+                    #     with torch.no_grad():
+                    #         state_tensor = torch.FloatTensor(state.encode(self.env)).unsqueeze(0).to(self.agent.device)
+                    #         q_vals = self.agent.q_network(state_tensor)
+                    #         max_q_value = torch.max(q_vals).item()
+                    #         episode_q_values.append(max_q_value)
                     
                     # Environment processes action
                     next_state, reward, done, info = self.env.step(action)
@@ -215,13 +220,11 @@ class Trainer:
             mlflow.log_metric(f"{prefix}{metric}", value, step=episode)
     
     def _action_to_idx(self, action: Action) -> int:
-        """Convert Action to index for neural network"""
-        # Use the actual action space from the environment
+        """Convert Action to index for neural network in O(1) time."""
+        key = (action.shot_type, action.shot_direction)
         try:
-            action_tuple = (action.shot_type, action.shot_direction)
-            return self.env.action_space.index(action_tuple)
-        except ValueError:
-            # If action not in action_space, this is an error
+            return self._action_to_idx_map[key]
+        except KeyError:
             raise ValueError(
                 f"Invalid action: {action}. "
                 f"Shot type '{action.shot_type}' with direction '{action.shot_direction}' "

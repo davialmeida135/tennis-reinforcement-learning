@@ -43,7 +43,7 @@ def main():
         gamma=0.95,
         epsilon=1.0,
         epsilon_min=0.01,
-        epsilon_decay=0.995,
+        epsilon_decay=0.999,
         memory_size=10000,
         batch_size=32,
         target_update_freq=100
@@ -59,7 +59,7 @@ def main():
     
     # Training configuration
     training_config = {
-        "episodes": 2000,
+        "episodes": 100,
         "save_freq": 100,
         "eval_freq": 200,
         "run_name": "dqn_tennis_v1",
