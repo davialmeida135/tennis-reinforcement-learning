@@ -5,8 +5,8 @@ project_root = pathlib.Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from app.environment.tennis_env import TennisEnv
-from app.agents.reinforce_agent import ReinforceAgent
-from app.training.reinforce_trainer import ReinforceTrainer
+from app.agents.dqn_agent import DQNAgent
+from app.training.dqn_trainer import DQNTrainer
 from app.data.transition_graph import TransitionBuilder
 
 
@@ -20,14 +20,14 @@ def main():
     print("Creating tennis environment...")
     env = TennisEnv(transition_graph=transition_graph, serve_first=True, illegal_action_penalty=-0.5)
     
-    print("Initializing REINFORCE agent...")
-    agent = ReinforceAgent(env=env, lr=0.001, gamma=0.99)
+    print("Initializing DQN agent...")
+    agent = DQNAgent(env=env, lr=0.001, gamma=0.95)
     
-    print("Initializing REINFORCE trainer...")
-    trainer = ReinforceTrainer(env=env, agent=agent)
+    print("Initializing DQN trainer...")
+    trainer = DQNTrainer(env=env, agent=agent)
     
     print("Starting training...")
-    trainer.train(episodes=2000, save_freq=200, eval_freq=200, run_name="reinforce_tennis_v1")
+    trainer.train(episodes=2000, save_freq=200, eval_freq=200, run_name="dqn_tennis_v1")
 
 
 if __name__ == "__main__":

@@ -86,7 +86,7 @@ class ReinforceAgent(BaseAgent):
         shot_type, shot_direction = self._idx_to_action_map[action_idx.item()]
         return Action(shot_type=shot_type, shot_direction=shot_direction)
 
-    def remember(self, state, action_idx, reward, next_state, done):
+    def remember(self, reward):
         """
         Stores the reward for the current step.
         Unlike DQN, it doesn't need the full (s,a,r,s',d) tuple in the same way.
@@ -115,7 +115,7 @@ class ReinforceAgent(BaseAgent):
 
         # Sum the losses, backpropagate, and update the network
         self.optimizer.zero_grad()
-        loss = torch.cat(policy_loss).sum()
+        loss = torch.stack(policy_loss).sum()
         loss.backward()
         self.optimizer.step()
 
