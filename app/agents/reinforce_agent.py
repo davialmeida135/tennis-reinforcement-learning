@@ -1,3 +1,4 @@
+import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -39,12 +40,23 @@ class ReinforceAgent(BaseAgent):
     returns calculated from that episode.
     """
 
-    def __init__(self, env: TennisEnv, lr: float = 0.001, gamma: float = 0.99):
+    def __init__(
+        self,
+        env: TennisEnv,
+        lr: float = 0.001,
+        gamma: float = 0.99,
+        epsilon: float = 0.0,
+        epsilon_min: float = 0.0,
+        epsilon_decay: float = 0.99,
+    ):
         self.env = env
         self.state_size = len(env.state)
         self.action_size = len(env.action_space)
         self.gamma = gamma
         self.lr = lr
+        self.epsilon = epsilon
+        self.epsilon_min = epsilon_min
+        self.epsilon_decay = epsilon_decay
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -66,7 +78,7 @@ class ReinforceAgent(BaseAgent):
             i: action for i, action in enumerate(self.env.action_space)
         }
 
-    def act(self, state: State) -> Action:
+    def act(self, state: State, training: bool = True) -> Action:
         """
         Selects an action by sampling from the policy distribution.
         """
@@ -75,7 +87,7 @@ class ReinforceAgent(BaseAgent):
 
         # Get action probabilities from the policy network
         probs = self.policy_network(state_tensor)
-        
+
         # Create a categorical distribution and sample an action
         m = Categorical(probs)
         action_idx = m.sample()
@@ -122,7 +134,7 @@ class ReinforceAgent(BaseAgent):
         # Clear the episode buffers for the next episode
         self.rewards.clear()
         self.log_probs.clear()
-        
+
         return loss.item()
 
     def save(self, filepath: str):
@@ -131,5 +143,7 @@ class ReinforceAgent(BaseAgent):
 
     def load(self, filepath: str):
         """Loads the policy network's state."""
-        self.policy_network.load_state_dict(torch.load(filepath, map_location=self.device))
+        self.policy_network.load_state_dict(
+            torch.load(filepath, map_location=self.device)
+        )
         self.policy_network.to(self.device)

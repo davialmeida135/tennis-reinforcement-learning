@@ -72,16 +72,16 @@ class BaseTrainer(ABC):
                 if episode % 100 == 0:
                     self._print_progress(episode)
 
-                # Periodic evaluation
-                if episode % eval_freq == 0 and episode > 0:
-                    eval_results = self.evaluate(episodes=50)
-                    self._log_evaluation_results(eval_results, episode)
-
                 # Save checkpoints
                 if episode % save_freq == 0 and episode > 0:
                     checkpoint_path = f"models/checkpoints/{self.agent_name}_episode_{episode}.pth"
                     self.save_checkpoint(checkpoint_path)
                     mlflow.log_artifact(checkpoint_path, "checkpoints")
+
+                # Periodic evaluation
+                if episode % eval_freq == 0 and episode > 0:
+                    eval_results = self.evaluate(episodes=50)
+                    self._log_evaluation_results(eval_results, episode)
 
             # Final steps
             self._finalize_training(episodes)
@@ -212,14 +212,19 @@ class BaseTrainer(ABC):
 
     def _finalize_training(self, episodes: int):
         """Finalize training: evaluation, plots, and model saving"""
-        # Final evaluation
-        final_eval_results = self.evaluate(episodes=100)
-        self._log_evaluation_results(final_eval_results, episodes, prefix="final_")
-
+        # Save final model
+        final_model_path = "models/final_model.pth"
+        self.save_checkpoint(final_model_path)
+        
         # Save final training plots
         plot_path = "training_plots.png"
         self.plot_training_history(save_path=plot_path)
         mlflow.log_artifact(plot_path, "plots")
+
+        # Final evaluation
+        final_eval_results = self.evaluate(episodes=100)
+        self._log_evaluation_results(final_eval_results, episodes, prefix="final_")
+
 
         # Save training history
         history_path = "training_history.json"
@@ -227,9 +232,6 @@ class BaseTrainer(ABC):
             json.dump(self.training_history, f)
         mlflow.log_artifact(history_path, "data")
 
-        # Save final model
-        final_model_path = "models/final_model.pth"
-        self.save_checkpoint(final_model_path)
 
     @abstractmethod
     def plot_training_history(self, save_path: str = None):

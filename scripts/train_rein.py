@@ -21,7 +21,7 @@ def main():
     env = TennisEnv(transition_graph=transition_graph, serve_first=True, illegal_action_penalty=-0.5)
     
     print("Initializing REINFORCE agent...")
-    agent = ReinforceAgent(env=env, lr=0.001, gamma=0.99)
+    agent = ReinforceAgent(env=env, lr=1e-2, gamma=0.99)
     
     print("Initializing REINFORCE trainer...")
     trainer = ReinforceTrainer(env=env, agent=agent)
