@@ -2,6 +2,9 @@ import sys
 import pathlib
 from pathlib import Path
 import json
+import time
+
+import mlflow
 
 from app.agents.dqn_agent import DQNAgent
 
@@ -42,8 +45,9 @@ def play_once(env: TennisEnv, agent: BaseAgent, render: bool = False):
 
         if render:
             print(f"Shot {len(strokes)}: {stroke_record}")
-            print(f"Match Score: Player {env.state.player_game_score}-{env.state.player_set_score} | PC {env.state.pc_game_score}-{env.state.pc_set_score}")
+            print(f"Match Score: Player {env.state.player_set_score}-{env.state.player_game_score} |  {env.state.pc_game_score}-{env.state.pc_set_score} PC")
 
+        time.sleep(1.5)
         if done:
             break
 
@@ -79,14 +83,16 @@ def main(
         epsilon=0.5
     )  # use defaults; ensure signature matches your implementation
 
-    ckpt_path = project_root / checkpoint
-    if ckpt_path.exists():
-        print(f"Loading checkpoint: {ckpt_path}")
-        agent.load(str(ckpt_path))
-    else:
-        print(
-            f"Checkpoint not found at {ckpt_path}; running agent without weights (random/initialized policy)"
-        )
+    mlflow.set_tracking_uri("https://mlflow.digi.com.br")  # your self‑hosted URL
+    model_uri = "models:/tennis-reinforce-model/None"      # name/stage in registry
+
+    # build env first
+    transition_graph = load_transition_graph(Path("data/processed/shot_transitions_combined.csv"))
+    env = TennisEnv(transition_graph=transition_graph, serve_first=False)
+
+    agent = DQNAgent(env=env, epsilon=0.0)  # epsilon=0 for inference
+    agent.q_network = mlflow.pytorch.load_model(model_uri)
+    agent.q_network.to(agent.device)
 
     results = []
     for i in range(matches):
