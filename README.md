@@ -1,25 +1,138 @@
 # tennis-reinforcement-learning
 
-https://www.notion.so/Projeto-2a7fa0fea78c80438061c299a591aea9?source=copy_link
+Train reinforcement learning agents to play tennis rallies using a stochastic transition graph built from the Match Charting Project dataset. The environment simulates points, games, and sets, and agents learn to choose shots (type, direction) to maximize rewards.
 
+## Repository structure
 
+- Core
+  - [app/environment/tennis_env.py](app/environment/tennis_env.py) — [`app.environment.tennis_env.TennisEnv`](app/environment/tennis_env.py), step logic, action sampling from transition graph
+  - [app/environment/tennis_engine.py](app/environment/tennis_engine.py) — [`app.environment.tennis_engine.TennisMatch`](app/environment/tennis_engine.py), game/set/tiebreak mechanics
+  - [app/models/env.py](app/models/env.py) — [`app.models.env.Action`](app/models/env.py), [`app.models.env.State`](app/models/env.py), [`app.models.env.Turn`](app/models/env.py)
+  - [app/agents/base_agent.py](app/agents/base_agent.py) — [`app.agents.base_agent.BaseAgent`](app/agents/base_agent.py)
+  - [app/agents/dqn_agent.py](app/agents/dqn_agent.py) — [`app.agents.dqn_agent.DQNAgent`](app/agents/dqn_agent.py)
+  - [app/agents/reinforce_agent.py](app/agents/reinforce_agent.py) — [`app.agents.reinforce_agent.ReinforceAgent`](app/agents/reinforce_agent.py)
+  - [app/training/base_trainer.py](app/training/base_trainer.py) — [`app.training.base_trainer.BaseTrainer`](app/training/base_trainer.py), MLflow logging, checkpoints
+  - Trainers: [app/training/dqn_trainer.py](app/training/dqn_trainer.py), [app/training/reinforce_trainer.py](app/training/reinforce_trainer.py)
+- Data
+  - [app/data/match_parser.py](app/data/match_parser.py) — parse raw Match Charting CSVs into shot-level rows
+  - [app/data/transition_counter.py](app/data/transition_counter.py) — build transition counts DataFrame with tennis rules
+  - [app/data/transition_graph.py](app/data/transition_graph.py) — [`app.data.transition_graph.TransitionBuilder`](app/data/transition_graph.py), convert counts to a probabilistic graph
+- Scripts
+  - [scripts/parse_all_matches.py](scripts/parse_all_matches.py) — parse raw datasets
+  - [scripts/count_transitions.py](scripts/count_transitions.py) — per-file transition counts
+  - [scripts/sum_transition_counts.py](scripts/sum_transition_counts.py) — merge counts to combined CSV/Parquet
+  - [scripts/train_dqn.py](scripts/train_dqn.py), [scripts/train_rein.py](scripts/train_rein.py) — training entry points
+  - [scripts/test.py](scripts/test.py) — load model via MLflow, play matches
+- Notebooks
+  - [notebooks/shots.ipynb](notebooks/shots.ipynb) — EDA on parsed shots
+  - [notebooks/transitions.ipynb](notebooks/transitions.ipynb) — transition rules/probabilities
+  - [notebooks/test_methods.ipynb](notebooks/test_methods.ipynb) — environment and agent tests
 
-# License
+## Installation
 
-<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Dataset" property="dct:title" rel="dct:type">Crowdsourced shot-by-shot professional tennis data</span> by <a xmlns:cc="http://creativecommons.org/ns#" href="http://www.tennisabstract.com/charting/meta.html" property="cc:attributionName" rel="cc:attributionURL">The Tennis Abstract Match Charting Project</a> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.<br />Based on a work at <a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/JeffSackmann/tennis_MatchChartingProject" rel="dct:source">https://github.com/JeffSackmann/tennis_MatchChartingProject</a>
+```sh
+# Python 3.12 recommended
+python -m venv .venv
+. .venv/Scripts/activate   # Windows
+# or: source .venv/bin/activate
 
-In other words: Attribution is required. Non-commercial use only.
+pip install -r requirements.txt
+```
 
-I'm serious about the license, and I'm really disappointed with the handful of people who have chosen to violate it. If violations continue, I may stop updating the repo entirely. If you're going to use something that has required thousands of person-hours to build and maintain, it seems to reasonable to require that you understand and follow a simple license.
+ou
 
----
+```bash
+uv sync
+```
 
-[1] http://www.tennisabstract.com/charting/meta.html
+## Data pipeline
 
-[2] http://heavytopspin.com/2013/11/26/the-match-charting-project/
+1. Parse raw Match Charting datasets to shot-level CSVs:
+```sh
+python -m scripts.parse_all_matches
+```
 
-[3] http://www.tennisabstract.com/charting/meta.html#contributors
+2. Count transitions per parsed file (enforces tennis rules, removes illegal/unknowns):
+```sh
+python -m scripts.count_transitions
+```
 
-[4] MatchChart 0.x.x.xlsm, included in this repo
+3. Merge counts across files:
+```sh
+python -m scripts.sum_transition_counts
+# outputs:
+# data/processed/shot_transitions_combined.csv
+# data/processed/shot_transitions_combined.parquet
+```
 
-[5] http://www.twitter.com/tennisabstract
+## Quickstart (training)
+
+```python
+# minimal example
+from app.data.transition_graph import TransitionBuilder
+from app.environment.tennis_env import TennisEnv
+from app.agents.dqn_agent import DQNAgent
+from app.training.dqn_trainer import DQNTrainer
+
+# build graph from combined counts
+graph = TransitionBuilder(
+    transitions_path="data/processed/shot_transitions_combined.csv",
+    temperature=1.0
+).build()
+
+# create environment
+env = TennisEnv(transition_graph=graph, serve_first=True, illegal_action_penalty=-0.5)
+
+# agent & trainer
+agent = DQNAgent(env=env, lr=0.001, gamma=0.95)
+trainer = DQNTrainer(env=env, agent=agent)
+
+# train with MLflow tracking
+trainer.train(episodes=2000, save_freq=200, eval_freq=200, run_name="dqn_tennis_v1")
+```
+
+Or use the scripts:
+```sh
+# DQN
+python -m scripts.train_dqn
+
+# REINFORCE
+python -m scripts.train_rein
+```
+
+## Playing matches (inference)
+
+```sh
+python -m scripts.test
+```
+
+This loads the transition graph via [`scripts.test.load_transition_graph`](scripts/test.py), initializes [`app.environment.tennis_env.TennisEnv`](app/environment/tennis_env.py), and runs matches using a loaded agent (MLflow model or local checkpoint).
+
+## Environment overview
+
+- State encoding: see [`app.models.env.State.encode`](app/models/env.py)
+- Action space: pairs of (shot_type, direction) from `stroke_space` and `direction_space` in [`app.environment.tennis_env.TennisEnv`](app/environment/tennis_env.py)
+- Illegal actions: filtered in [`app.environment.tennis_env.TennisEnv._filter_illegal_action`](app/environment/tennis_env.py), penalized by `ILLEGAL_ACTION_PENALTY`
+- Match engine (scores, sets, tiebreak): [`app.environment.tennis_engine.TennisMatch`](app/environment/tennis_engine.py)
+
+## MLflow
+
+Training uses MLflow for metrics, parameters, and artifacts:
+- Logged by [`app.training.base_trainer.BaseTrainer`](app/training/base_trainer.py)
+- Models saved to [models/](models/), with JSON histories (e.g., best checkpoints like best_model_episode_1003.pth)
+
+Configure tracking URI and experiment in trainers or scripts.
+
+## Development
+
+- Run unit-like experiments in notebooks:
+  - [notebooks/test_methods.ipynb](notebooks/test_methods.ipynb)
+  - [notebooks/transitions.ipynb](notebooks/transitions.ipynb)
+- Parse and EDA:
+  - [notebooks/shots.ipynb](notebooks/shots.ipynb)
+
+## License
+
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Dataset" property="dct:title" rel="dct:type">Crowdsourced shot-by-shot professional tennis data</span> by <a xmlns:cc="http://creativecommons.org/ns#" href="http://www.tennisabstract.com/charting/meta.html" property="cc:attributionName" rel="cc:attributionURL">The Tennis Abstract Match Charting Project</a> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.<br />Based on a work at <a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/JeffSackmann/tennis_MatchChartingProject" rel="dct:source">https://github.com/JeffSackmann/tennis_MatchChartingProject</a>.
+
+Attribution is required. Non-commercial use only.
