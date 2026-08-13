@@ -2,32 +2,6 @@
 
 Train reinforcement learning agents to play tennis rallies using a stochastic transition graph built from the Match Charting Project dataset. The environment simulates points, games, and sets, and agents learn to choose shots (type, direction) to maximize rewards.
 
-## Repository structure
-
-- Core
-  - [app/environment/tennis_env.py](app/environment/tennis_env.py) — [`app.environment.tennis_env.TennisEnv`](app/environment/tennis_env.py), step logic, action sampling from transition graph
-  - [app/environment/tennis_engine.py](app/environment/tennis_engine.py) — [`app.environment.tennis_engine.TennisMatch`](app/environment/tennis_engine.py), game/set/tiebreak mechanics
-  - [app/models/env.py](app/models/env.py) — [`app.models.env.Action`](app/models/env.py), [`app.models.env.State`](app/models/env.py), [`app.models.env.Turn`](app/models/env.py)
-  - [app/agents/base_agent.py](app/agents/base_agent.py) — [`app.agents.base_agent.BaseAgent`](app/agents/base_agent.py)
-  - [app/agents/dqn_agent.py](app/agents/dqn_agent.py) — [`app.agents.dqn_agent.DQNAgent`](app/agents/dqn_agent.py)
-  - [app/agents/reinforce_agent.py](app/agents/reinforce_agent.py) — [`app.agents.reinforce_agent.ReinforceAgent`](app/agents/reinforce_agent.py)
-  - [app/training/base_trainer.py](app/training/base_trainer.py) — [`app.training.base_trainer.BaseTrainer`](app/training/base_trainer.py), MLflow logging, checkpoints
-  - Trainers: [app/training/dqn_trainer.py](app/training/dqn_trainer.py), [app/training/reinforce_trainer.py](app/training/reinforce_trainer.py)
-- Data
-  - [app/data/match_parser.py](app/data/match_parser.py) — parse raw Match Charting CSVs into shot-level rows
-  - [app/data/transition_counter.py](app/data/transition_counter.py) — build transition counts DataFrame with tennis rules
-  - [app/data/transition_graph.py](app/data/transition_graph.py) — [`app.data.transition_graph.TransitionBuilder`](app/data/transition_graph.py), convert counts to a probabilistic graph
-- Scripts
-  - [scripts/parse_all_matches.py](scripts/parse_all_matches.py) — parse raw datasets
-  - [scripts/count_transitions.py](scripts/count_transitions.py) — per-file transition counts
-  - [scripts/sum_transition_counts.py](scripts/sum_transition_counts.py) — merge counts to combined CSV/Parquet
-  - [scripts/train_dqn.py](scripts/train_dqn.py), [scripts/train_rein.py](scripts/train_rein.py) — training entry points
-  - [scripts/test.py](scripts/test.py) — load model via MLflow, play matches
-- Notebooks
-  - [notebooks/shots.ipynb](notebooks/shots.ipynb) — EDA on parsed shots
-  - [notebooks/transitions.ipynb](notebooks/transitions.ipynb) — transition rules/probabilities
-  - [notebooks/test_methods.ipynb](notebooks/test_methods.ipynb) — environment and agent tests
-
 ## Installation
 
 ```sh
